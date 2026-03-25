@@ -32,6 +32,8 @@ jobs:
         run: npm ci
 
       - name: Build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
         run: npm run build -- --base=/${{ github.event.repository.name }}/
 
       - name: Upload artifact
