@@ -16,7 +16,7 @@ type FaqEntry = {
 const faqEntries: FaqEntry[] = [
   {
     id: "multi-org",
-    question: "Can we manage attendance for multiple branches or organizations??",
+    question: "Can we manage attendance for multiple branches or organizations?",
     answer:
       "Yes. You can manage multiple organizations with separate staff lists, rules, and analytics from one platform."
   },
