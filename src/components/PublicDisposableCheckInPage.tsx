@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import type { DisposableAttendance } from "../types";
+import type { PublicDisposableAttendanceForm } from "../types";
 import {
-  getDisposableAttendanceById,
-  listDisposableAttendanceResponses,
-  submitDisposableAttendanceResponse
+  getPublicDisposableAttendanceForm,
+  submitPublicDisposableAttendanceResponse
 } from "../lib/api";
 import { formatDateLong } from "../lib/time";
 
 const PublicDisposableCheckInPage = () => {
-  const { attendanceId = "" } = useParams();
-  const [attendance, setAttendance] = useState<DisposableAttendance | null>(null);
+  const { publicId = "" } = useParams();
+  const [attendance, setAttendance] = useState<PublicDisposableAttendanceForm | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "not-found" | "archived">("loading");
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
@@ -24,12 +23,12 @@ const PublicDisposableCheckInPage = () => {
 
   useEffect(() => {
     const load = async () => {
-      if (!attendanceId) {
+      if (!publicId) {
         setStatus("not-found");
         return;
       }
       setStatus("loading");
-      const item = await getDisposableAttendanceById(attendanceId);
+      const item = await getPublicDisposableAttendanceForm(publicId);
       if (!item) {
         setStatus("not-found");
         return;
@@ -45,12 +44,11 @@ const PublicDisposableCheckInPage = () => {
       });
       setValues(initial);
       setAttendance(item);
-      const responses = await listDisposableAttendanceResponses(item.id);
-      setResponseCount(responses.length);
+      setResponseCount(0);
       setStatus("ready");
     };
     void load();
-  }, [attendanceId]);
+  }, [publicId]);
 
   const handleSubmit = async () => {
     if (!attendance) return;
@@ -65,8 +63,8 @@ const PublicDisposableCheckInPage = () => {
       }
     }
 
-    await submitDisposableAttendanceResponse({
-      attendanceId: attendance.id,
+    await submitPublicDisposableAttendanceResponse({
+      publicId: attendance.publicId,
       values: Object.fromEntries(
         Object.entries(values).map(([key, value]) => [key, value.trim()])
       )
@@ -78,9 +76,7 @@ const PublicDisposableCheckInPage = () => {
     });
     setValues(cleared);
     setSuccessMessage("Check-in submitted successfully.");
-
-    const responses = await listDisposableAttendanceResponses(attendance.id);
-    setResponseCount(responses.length);
+    setResponseCount((prev) => prev + 1);
   };
 
   if (status === "loading") {

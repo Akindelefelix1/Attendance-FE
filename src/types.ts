@@ -135,6 +135,7 @@ export type DisposableRecurrenceMode = "none" | "daily" | "weekly" | "monthly" |
 
 export type DisposableAttendance = {
   id: string;
+  publicId: string;
   orgId: string;
   title: string;
   description: string;
@@ -147,11 +148,28 @@ export type DisposableAttendance = {
   recurrenceCustomRule: string;
   isArchived: boolean;
   createdAtISO: string;
+  updatedAtISO?: string;
 };
 
 export type DisposableAttendanceResponse = {
   id: string;
   attendanceId: string;
+  source?: "admin" | "public" | string;
+  submittedById?: string | null;
   submittedAtISO: string;
   values: Record<string, string>;
+};
+
+export type PublicDisposableAttendanceForm = {
+  publicId: string;
+  title: string;
+  description: string;
+  location: string;
+  eventDateISO: string;
+  fields: DisposableField[];
+  isArchived: boolean;
+  isRecurring: boolean;
+  recurrenceMode: DisposableRecurrenceMode;
+  recurrenceEndDateISO: string | null;
+  recurrenceCustomRule: string;
 };

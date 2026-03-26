@@ -37,7 +37,7 @@ createRoot(rootElement).render(
         <Route path="/app/analytics" element={<App />} />
         <Route path="/app/disposable" element={<App />} />
         <Route path="/app/settings" element={<App />} />
-        <Route path="/public/disposable/:attendanceId" element={<PublicDisposableCheckInPage />} />
+        <Route path="/public/disposable/:publicId" element={<PublicDisposableCheckInPage />} />
       </Routes>
     </HashRouter>
   </React.StrictMode>

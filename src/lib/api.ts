@@ -4,6 +4,7 @@ import type {
   DisposableAttendance,
   DisposableAttendanceResponse,
   DisposableField,
+  PublicDisposableAttendanceForm,
   OrgSettings,
   Organization,
   StaffMember
@@ -283,48 +284,8 @@ export const getAnalytics = (payload: {
     `/analytics?orgId=${encodeURIComponent(payload.orgId)}&range=${payload.range}&filter=${payload.filter}`
   );
 
-type DisposableStore = {
-  attendances: DisposableAttendance[];
-  responses: DisposableAttendanceResponse[];
-};
-
-const DISPOSABLE_STORAGE_KEY = "attendance-fe.disposable.v1";
-
-const readDisposableStore = (): DisposableStore => {
-  if (typeof window === "undefined") {
-    return { attendances: [], responses: [] };
-  }
-  const raw = window.localStorage.getItem(DISPOSABLE_STORAGE_KEY);
-  if (!raw) {
-    return { attendances: [], responses: [] };
-  }
-  try {
-    const parsed = JSON.parse(raw) as Partial<DisposableStore>;
-    return {
-      attendances: parsed.attendances ?? [],
-      responses: parsed.responses ?? []
-    };
-  } catch {
-    return { attendances: [], responses: [] };
-  }
-};
-
-const writeDisposableStore = (store: DisposableStore) => {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(DISPOSABLE_STORAGE_KEY, JSON.stringify(store));
-};
-
-const makeId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-
-export const listDisposableAttendances = async (orgId: string) => {
-  const store = readDisposableStore();
-  return store.attendances.filter((item) => item.orgId === orgId);
-};
-
-export const getDisposableAttendanceById = async (attendanceId: string) => {
-  const store = readDisposableStore();
-  return store.attendances.find((item) => item.id === attendanceId) ?? null;
-};
+export const listDisposableAttendances = async (orgId: string) =>
+  request<DisposableAttendance[]>(`/disposable-attendance?orgId=${encodeURIComponent(orgId)}`);
 
 export const createDisposableAttendance = async (payload: {
   orgId: string;
@@ -337,67 +298,60 @@ export const createDisposableAttendance = async (payload: {
   recurrenceMode: DisposableAttendance["recurrenceMode"];
   recurrenceEndDateISO: string | null;
   recurrenceCustomRule: string;
-}) => {
-  const store = readDisposableStore();
-  const next: DisposableAttendance = {
-    id: makeId(),
-    orgId: payload.orgId,
-    title: payload.title,
-    description: payload.description ?? "",
-    location: payload.location ?? "",
-    eventDateISO: payload.eventDateISO,
-    fields: payload.fields,
-    isRecurring: payload.isRecurring,
-    recurrenceMode: payload.recurrenceMode,
-    recurrenceEndDateISO: payload.recurrenceEndDateISO,
-    recurrenceCustomRule: payload.recurrenceCustomRule,
-    isArchived: false,
-    createdAtISO: new Date().toISOString()
-  };
-  store.attendances = [next, ...store.attendances];
-  writeDisposableStore(store);
-  return next;
-};
+}) =>
+  request<DisposableAttendance>("/disposable-attendance", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
 
 export const updateDisposableAttendance = async (
   attendanceId: string,
+  orgId: string,
   updates: Partial<DisposableAttendance>
-) => {
-  const store = readDisposableStore();
-  let updated: DisposableAttendance | null = null;
-  store.attendances = store.attendances.map((item) => {
-    if (item.id !== attendanceId) return item;
-    updated = { ...item, ...updates, id: item.id, orgId: item.orgId };
-    return updated;
+) =>
+  request<DisposableAttendance>(`/disposable-attendance/${attendanceId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ ...updates, orgId })
   });
-  writeDisposableStore(store);
-  return updated;
-};
 
-export const deleteDisposableAttendance = async (attendanceId: string) => {
-  const store = readDisposableStore();
-  store.attendances = store.attendances.filter((item) => item.id !== attendanceId);
-  store.responses = store.responses.filter((item) => item.attendanceId !== attendanceId);
-  writeDisposableStore(store);
-};
+export const deleteDisposableAttendance = async (attendanceId: string, orgId: string) =>
+  request(`/disposable-attendance/${attendanceId}?orgId=${encodeURIComponent(orgId)}`, {
+    method: "DELETE"
+  });
 
-export const listDisposableAttendanceResponses = async (attendanceId: string) => {
-  const store = readDisposableStore();
-  return store.responses.filter((item) => item.attendanceId === attendanceId);
-};
+export const listDisposableAttendanceResponses = async (attendanceId: string, orgId: string) =>
+  request<DisposableAttendanceResponse[]>(
+    `/disposable-attendance/${attendanceId}/responses?orgId=${encodeURIComponent(orgId)}`
+  );
 
 export const submitDisposableAttendanceResponse = async (payload: {
   attendanceId: string;
+  orgId: string;
   values: Record<string, string>;
-}) => {
-  const store = readDisposableStore();
-  const response: DisposableAttendanceResponse = {
-    id: makeId(),
-    attendanceId: payload.attendanceId,
-    submittedAtISO: new Date().toISOString(),
-    values: payload.values
-  };
-  store.responses = [response, ...store.responses];
-  writeDisposableStore(store);
-  return response;
-};
+}) =>
+  request<DisposableAttendanceResponse>(
+    `/disposable-attendance/${payload.attendanceId}/responses/admin`,
+    {
+      method: "POST",
+      body: JSON.stringify({ orgId: payload.orgId, values: payload.values })
+    }
+  );
+
+export const getPublicDisposableAttendanceForm = (publicId: string) =>
+  request<PublicDisposableAttendanceForm>(
+    `/public/disposable-attendance/${encodeURIComponent(publicId)}`,
+    { credentials: "omit" }
+  );
+
+export const submitPublicDisposableAttendanceResponse = (payload: {
+  publicId: string;
+  values: Record<string, string>;
+}) =>
+  request<DisposableAttendanceResponse>(
+    `/public/disposable-attendance/${encodeURIComponent(payload.publicId)}/check-in`,
+    {
+      method: "POST",
+      body: JSON.stringify({ values: payload.values }),
+      credentials: "omit"
+    }
+  );

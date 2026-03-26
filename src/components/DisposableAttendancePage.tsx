@@ -120,7 +120,11 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   };
 
   const reloadResponses = async (attendanceId: string) => {
-    const next = await listDisposableAttendanceResponses(attendanceId);
+    if (!organization) {
+      setResponses([]);
+      return;
+    }
+    const next = await listDisposableAttendanceResponses(attendanceId, organization.id);
     setResponses(next);
   };
 
@@ -154,8 +158,8 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     if (!activeItem) return "";
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const basePath = typeof window !== "undefined" ? window.location.pathname : "/";
-    return `${origin}${basePath}#/public/disposable/${activeItem.id}`;
-  }, [activeItem?.id]);
+    return `${origin}${basePath}#/public/disposable/${activeItem.publicId}`;
+  }, [activeItem?.publicId]);
 
   const qrImageUrl = useMemo(() => {
     if (!publicLink) return "";
@@ -243,7 +247,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   };
 
   const handleSubmitResponse = async () => {
-    if (!activeItem) return;
+    if (!activeItem || !organization) return;
     setResponseError("");
 
     for (const field of activeItem.fields) {
@@ -256,6 +260,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
 
     await submitDisposableAttendanceResponse({
       attendanceId: activeItem.id,
+      orgId: organization.id,
       values: Object.fromEntries(
         Object.entries(responseValues).map(([key, value]) => [key, value.trim()])
       )
@@ -543,7 +548,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                     className="btn ghost"
                     type="button"
                     onClick={() =>
-                      void updateDisposableAttendance(activeItem.id, {
+                      void updateDisposableAttendance(activeItem.id, organization.id, {
                         isArchived: !activeItem.isArchived
                       }).then(() => reloadItems())
                     }
@@ -556,7 +561,11 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                   <button
                     className="btn ghost danger"
                     type="button"
-                    onClick={() => void deleteDisposableAttendance(activeItem.id).then(() => reloadItems())}
+                    onClick={() =>
+                      void deleteDisposableAttendance(activeItem.id, organization.id).then(
+                        () => reloadItems()
+                      )
+                    }
                   >
                     Delete
                   </button>
