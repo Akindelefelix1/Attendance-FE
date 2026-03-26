@@ -14,20 +14,35 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
+type ToastState = {
+  kind: "success" | "error";
+  message: string;
+};
+
 const PublicDisposableCheckInPage = () => {
   const { publicId = "" } = useParams();
   const [attendance, setAttendance] = useState<PublicDisposableAttendanceForm | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "not-found" | "archived" | "error">("loading");
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [responseCount, setResponseCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<ToastState | null>(null);
 
   const titleLabel = useMemo(() => {
     if (!attendance) return "Event check-in";
     return attendance.title;
   }, [attendance]);
+
+  const showToast = (kind: ToastState["kind"], message: string) => {
+    setToast({ kind, message });
+  };
+
+  useEffect(() => {
+    if (!toast) return;
+    const timeoutId = window.setTimeout(() => setToast(null), 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [toast]);
 
   useEffect(() => {
     const load = async () => {
@@ -63,6 +78,7 @@ const PublicDisposableCheckInPage = () => {
           return;
         }
         setError(message);
+        showToast("error", message);
         setStatus("error");
       }
     };
@@ -72,7 +88,6 @@ const PublicDisposableCheckInPage = () => {
   const handleSubmit = async () => {
     if (!attendance) return;
     setError("");
-    setSuccessMessage("");
 
     for (const field of attendance.fields) {
       const nextValue = values[field.id]?.trim() ?? "";
@@ -96,10 +111,12 @@ const PublicDisposableCheckInPage = () => {
         cleared[field.id] = "";
       });
       setValues(cleared);
-      setSuccessMessage("Check-in submitted successfully.");
       setResponseCount((prev) => prev + 1);
+      showToast("success", "Check-in submitted successfully.");
     } catch (submitError) {
-      setError(getErrorMessage(submitError, "Could not submit check-in."));
+      const message = getErrorMessage(submitError, "Could not submit check-in.");
+      setError(message);
+      showToast("error", message);
     } finally {
       setIsSubmitting(false);
     }
@@ -109,6 +126,14 @@ const PublicDisposableCheckInPage = () => {
     return (
       <main className="public-checkin-shell">
         <section className="public-checkin-card">
+          {toast ? (
+            <div className={`toast-banner ${toast.kind}`} role="status" aria-live="polite">
+              <span>{toast.message}</span>
+              <button type="button" onClick={() => setToast(null)} aria-label="Dismiss message">
+                ×
+              </button>
+            </div>
+          ) : null}
           <h1>Loading check-in...</h1>
           <p className="muted">Please wait while we prepare the attendance form.</p>
         </section>
@@ -120,6 +145,14 @@ const PublicDisposableCheckInPage = () => {
     return (
       <main className="public-checkin-shell">
         <section className="public-checkin-card">
+          {toast ? (
+            <div className={`toast-banner ${toast.kind}`} role="status" aria-live="polite">
+              <span>{toast.message}</span>
+              <button type="button" onClick={() => setToast(null)} aria-label="Dismiss message">
+                ×
+              </button>
+            </div>
+          ) : null}
           <h1>Check-in form not found</h1>
           <p className="muted">This attendance link may be invalid or removed.</p>
           <Link className="btn ghost" to="/login">
@@ -134,6 +167,14 @@ const PublicDisposableCheckInPage = () => {
     return (
       <main className="public-checkin-shell">
         <section className="public-checkin-card">
+          {toast ? (
+            <div className={`toast-banner ${toast.kind}`} role="status" aria-live="polite">
+              <span>{toast.message}</span>
+              <button type="button" onClick={() => setToast(null)} aria-label="Dismiss message">
+                ×
+              </button>
+            </div>
+          ) : null}
           <h1>{titleLabel}</h1>
           <p className="muted">This attendance form is no longer accepting responses.</p>
           <Link className="btn ghost" to="/login">
@@ -148,6 +189,14 @@ const PublicDisposableCheckInPage = () => {
     return (
       <main className="public-checkin-shell">
         <section className="public-checkin-card">
+          {toast ? (
+            <div className={`toast-banner ${toast.kind}`} role="status" aria-live="polite">
+              <span>{toast.message}</span>
+              <button type="button" onClick={() => setToast(null)} aria-label="Dismiss message">
+                ×
+              </button>
+            </div>
+          ) : null}
           <h1>Unable to load check-in form</h1>
           <p className="auth-error">{error || "Something went wrong."}</p>
           <Link className="btn ghost" to="/login">
@@ -161,6 +210,14 @@ const PublicDisposableCheckInPage = () => {
   return (
     <main className="public-checkin-shell">
       <section className="public-checkin-card">
+        {toast ? (
+          <div className={`toast-banner ${toast.kind}`} role="status" aria-live="polite">
+            <span>{toast.message}</span>
+            <button type="button" onClick={() => setToast(null)} aria-label="Dismiss message">
+              ×
+            </button>
+          </div>
+        ) : null}
         <div className="public-checkin-header">
           <h1>{attendance?.title}</h1>
           <p className="muted">
@@ -190,7 +247,6 @@ const PublicDisposableCheckInPage = () => {
           ))}
 
           {error ? <p className="auth-error">{error}</p> : null}
-          {successMessage ? <p className="public-success">{successMessage}</p> : null}
 
           <button className="btn solid" type="button" onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? "Submitting..." : "Submit check-in"}

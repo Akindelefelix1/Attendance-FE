@@ -270,6 +270,44 @@ select {
   font-weight: 600;
 }
 
+.toast-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.toast-banner.error {
+  background: #ffe9e3;
+  border-color: #f9b9a7;
+  color: #9a2f19;
+}
+
+.toast-banner.success {
+  background: #e9f9f1;
+  border-color: #b4e6cc;
+  color: #1e6c4b;
+}
+
+.toast-banner button {
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
 .landing-hero {
   display: grid;
   gap: 2.5rem;

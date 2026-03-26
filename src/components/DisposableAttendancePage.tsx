@@ -77,6 +77,11 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
+type ToastState = {
+  kind: "success" | "error";
+  message: string;
+};
+
 const DisposableAttendancePage = ({ organization }: Props) => {
   const [items, setItems] = useState<DisposableAttendance[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -102,12 +107,12 @@ const DisposableAttendancePage = ({ organization }: Props) => {
 
   const [responseValues, setResponseValues] = useState<Record<string, string>>({});
   const [responseError, setResponseError] = useState("");
-  const [shareStatus, setShareStatus] = useState("");
   const [loadError, setLoadError] = useState("");
   const [manageError, setManageError] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isManaging, setIsManaging] = useState(false);
+  const [toast, setToast] = useState<ToastState | null>(null);
 
   const activeItem = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
@@ -116,6 +121,16 @@ const DisposableAttendancePage = ({ organization }: Props) => {
 
   const planTier = organization?.settings.planTier ?? "free";
   const limit = tierLimits[planTier];
+
+  const showToast = (kind: ToastState["kind"], message: string) => {
+    setToast({ kind, message });
+  };
+
+  useEffect(() => {
+    if (!toast) return;
+    const timeoutId = window.setTimeout(() => setToast(null), 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [toast]);
 
   const reloadItems = async () => {
     if (!organization) {
@@ -135,7 +150,9 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     } catch (error) {
       setItems([]);
       setSelectedId("");
-      setLoadError(getErrorMessage(error, "Could not load disposable attendance."));
+      const message = getErrorMessage(error, "Could not load disposable attendance.");
+      setLoadError(message);
+      showToast("error", message);
     }
   };
 
@@ -150,7 +167,9 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       setResponses(next);
     } catch (error) {
       setResponses([]);
-      setManageError(getErrorMessage(error, "Could not load responses."));
+      const message = getErrorMessage(error, "Could not load responses.");
+      setManageError(message);
+      showToast("error", message);
     }
   };
 
@@ -274,7 +293,9 @@ const DisposableAttendancePage = ({ organization }: Props) => {
 
       await reloadItems();
     } catch (error) {
-      setCreateError(getErrorMessage(error, "Could not create disposable attendance."));
+      const message = getErrorMessage(error, "Could not create disposable attendance.");
+      setCreateError(message);
+      showToast("error", message);
     } finally {
       setIsCreating(false);
     }
@@ -309,8 +330,11 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       });
       setResponseValues(resetValues);
       await reloadResponses(activeItem.id);
+      showToast("success", "Attendance response submitted.");
     } catch (error) {
-      setResponseError(getErrorMessage(error, "Could not submit attendance response."));
+      const message = getErrorMessage(error, "Could not submit attendance response.");
+      setResponseError(message);
+      showToast("error", message);
     } finally {
       setIsSubmitting(false);
     }
@@ -325,8 +349,11 @@ const DisposableAttendancePage = ({ organization }: Props) => {
         isArchived: !activeItem.isArchived
       });
       await reloadItems();
+      showToast("success", activeItem.isArchived ? "Attendance reopened." : "Attendance archived.");
     } catch (error) {
-      setManageError(getErrorMessage(error, "Could not update disposable attendance."));
+      const message = getErrorMessage(error, "Could not update disposable attendance.");
+      setManageError(message);
+      showToast("error", message);
     } finally {
       setIsManaging(false);
     }
@@ -339,8 +366,11 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       setManageError("");
       await deleteDisposableAttendance(activeItem.id, organization.id);
       await reloadItems();
+      showToast("success", "Disposable attendance deleted.");
     } catch (error) {
-      setManageError(getErrorMessage(error, "Could not delete disposable attendance."));
+      const message = getErrorMessage(error, "Could not delete disposable attendance.");
+      setManageError(message);
+      showToast("error", message);
     } finally {
       setIsManaging(false);
     }
@@ -368,10 +398,9 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     if (!publicLink) return;
     try {
       await navigator.clipboard.writeText(publicLink);
-      setShareStatus("Public check-in link copied.");
-      window.setTimeout(() => setShareStatus(""), 2000);
+      showToast("success", "Public check-in link copied.");
     } catch {
-      setShareStatus("Could not copy link. Please copy manually.");
+      showToast("error", "Could not copy link. Please copy manually.");
     }
   };
 
@@ -388,6 +417,15 @@ const DisposableAttendancePage = ({ organization }: Props) => {
 
   return (
     <section className="panel disposable-page">
+      {toast ? (
+        <div className={`toast-banner ${toast.kind}`} role="status" aria-live="polite">
+          <span>{toast.message}</span>
+          <button type="button" onClick={() => setToast(null)} aria-label="Dismiss message">
+            ×
+          </button>
+        </div>
+      ) : null}
+
       <div className="panel-header disposable-header">
         <div>
           <h2>Disposable attendance</h2>
@@ -667,7 +705,6 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                     Open public form
                   </a>
                 </div>
-                {shareStatus ? <p className="muted">{shareStatus}</p> : null}
                 {qrImageUrl ? (
                   <img
                     className="share-qr"
