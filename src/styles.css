@@ -2437,3 +2437,104 @@ input {
     padding: 0.65rem;
   }
 }
+
+@media (max-width: 360px) {
+  .app-shell,
+  .landing {
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+  }
+
+  .top-nav,
+  .topbar {
+    gap: 0.6rem;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .brand {
+    font-size: 0.92rem;
+  }
+
+  .nav-subtitle,
+  .muted {
+    font-size: 0.82rem;
+  }
+
+  h1 {
+    font-size: 1.45rem;
+    line-height: 1.25;
+  }
+
+  h2 {
+    font-size: 1.2rem;
+    line-height: 1.3;
+  }
+
+  h3 {
+    font-size: 1.05rem;
+    line-height: 1.3;
+  }
+
+  .btn,
+  .nav-link,
+  .topbar-actions .nav-pill,
+  .auth-password-toggle {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.88rem;
+  }
+
+  .auth-card,
+  .panel,
+  .panel.wide,
+  .modal,
+  .modal.modal-wide,
+  .landing-hero-panel,
+  .landing-hero-card,
+  .landing-section,
+  .landing-card {
+    padding: 0.85rem;
+  }
+
+  .landing-lede {
+    font-size: 0.9rem;
+  }
+
+  .hero-image-frame {
+    min-height: 190px;
+  }
+
+  .hero-phone.primary {
+    width: 92%;
+    right: 4%;
+  }
+
+  .summary-label,
+  .stat-label,
+  .attendance-row .cell::before,
+  .analytics-row .cell::before {
+    letter-spacing: 0.07em;
+  }
+
+  .stat-value {
+    font-size: 1.18rem;
+  }
+
+  .badge,
+  .pill,
+  .status,
+  .flag,
+  .metric-pill {
+    font-size: 0.72rem;
+  }
+
+  .staff-cell {
+    gap: 0.5rem;
+  }
+
+  .attendance-row,
+  .analytics-row,
+  .org-row {
+    gap: 0.55rem;
+    padding: 0.65rem;
+  }
+}
