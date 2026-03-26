@@ -1952,6 +1952,11 @@ input {
   max-width: 100%;
 }
 
+.attendance-scroll {
+  width: 100%;
+  max-width: 100%;
+}
+
 .attendance-head {
   display: grid;
   grid-template-columns: 2.2fr 1.2fr 1fr 1fr 1fr 1fr 1.6fr;
@@ -2193,15 +2198,19 @@ input {
     justify-content: center;
   }
 
-  .attendance-view {
+  .attendance-scroll {
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
   }
 
   .attendance-head,
+  .attendance-list,
   .attendance-row {
     min-width: 860px;
+  }
+
+  .attendance-list {
     width: max-content;
   }
 
@@ -2255,6 +2264,14 @@ input {
 }
 
 @media (max-width: 900px) {
+  .app-shell.with-fixed-nav {
+    padding-top: 1rem;
+  }
+
+  .admin-nav {
+    position: sticky;
+  }
+
   .layout {
     grid-template-columns: 1fr;
   }
@@ -2272,14 +2289,6 @@ input {
 @media (max-width: 700px) {
   .app-shell {
     padding: 1.5rem 1rem 2.5rem;
-  }
-
-  .app-shell.with-fixed-nav {
-    padding-top: 1rem;
-  }
-
-  .admin-nav {
-    position: sticky;
   }
 
   .landing {
