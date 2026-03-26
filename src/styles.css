@@ -2538,3 +2538,96 @@ input {
     padding: 0.65rem;
   }
 }
+
+@media (max-width: 320px) {
+  .app-shell,
+  .landing {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .top-nav,
+  .topbar {
+    padding: 0.5rem 0.55rem;
+  }
+
+  .brand {
+    font-size: 0.88rem;
+  }
+
+  .brand-mark,
+  .avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  h1 {
+    font-size: 1.3rem;
+  }
+
+  h2 {
+    font-size: 1.1rem;
+  }
+
+  h3 {
+    font-size: 1rem;
+  }
+
+  .btn,
+  .nav-link,
+  .topbar-actions .nav-pill,
+  .auth-password-toggle {
+    padding: 0.45rem 0.65rem;
+    font-size: 0.84rem;
+  }
+
+  .auth-card,
+  .panel,
+  .panel.wide,
+  .modal,
+  .modal.modal-wide,
+  .landing-hero-panel,
+  .landing-hero-card,
+  .landing-section,
+  .landing-card,
+  .site-footer {
+    padding: 0.75rem;
+  }
+
+  .hero-image-frame {
+    min-height: 170px;
+  }
+
+  .hero-phone.primary {
+    width: 96%;
+    right: 2%;
+  }
+
+  .badge,
+  .pill,
+  .status,
+  .flag,
+  .metric-pill,
+  .muted {
+    font-size: 0.7rem;
+  }
+
+  .summary-label,
+  .stat-label,
+  .attendance-row .cell::before,
+  .analytics-row .cell::before {
+    font-size: 0.62rem;
+    letter-spacing: 0.05em;
+  }
+
+  .stat-value {
+    font-size: 1.08rem;
+  }
+
+  .attendance-row,
+  .analytics-row,
+  .org-row {
+    gap: 0.5rem;
+    padding: 0.55rem;
+  }
+}
