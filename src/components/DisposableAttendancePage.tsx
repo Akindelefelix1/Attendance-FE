@@ -95,6 +95,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
 
   const [responseValues, setResponseValues] = useState<Record<string, string>>({});
   const [responseError, setResponseError] = useState("");
+  const [shareStatus, setShareStatus] = useState("");
 
   const activeItem = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
@@ -148,6 +149,18 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   }, [activeItem?.id]);
 
   const canCreate = items.length < limit;
+
+  const publicLink = useMemo(() => {
+    if (!activeItem) return "";
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const basePath = typeof window !== "undefined" ? window.location.pathname : "/";
+    return `${origin}${basePath}#/public/disposable/${activeItem.id}`;
+  }, [activeItem?.id]);
+
+  const qrImageUrl = useMemo(() => {
+    if (!publicLink) return "";
+    return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(publicLink)}`;
+  }, [publicLink]);
 
   const handleAddCustomField = () => {
     const trimmed = customFieldInput.trim();
@@ -272,6 +285,17 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       .join("\n");
     const filename = `${organization?.name ?? "org"}-${toSlug(activeItem.title)}-disposable-attendance.csv`;
     downloadCsv(filename, csv);
+  };
+
+  const handleCopyPublicLink = async () => {
+    if (!publicLink) return;
+    try {
+      await navigator.clipboard.writeText(publicLink);
+      setShareStatus("Public check-in link copied.");
+      window.setTimeout(() => setShareStatus(""), 2000);
+    } catch {
+      setShareStatus("Could not copy link. Please copy manually.");
+    }
   };
 
   if (!organization) {
@@ -546,6 +570,34 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                   <span className="pill">{recurrenceLabel(activeItem)}</span>
                   <span className="pill">{responses.length} responses</span>
                 </div>
+              </div>
+
+              <div className="disposable-block share-block">
+                <h4>Public self check-in</h4>
+                <p className="muted">
+                  Share this link or QR code so attendees can check in themselves.
+                  Admin check-in still works below.
+                </p>
+                <label>
+                  Shareable link
+                  <input type="text" value={publicLink} readOnly />
+                </label>
+                <div className="disposable-actions">
+                  <button className="btn ghost" type="button" onClick={handleCopyPublicLink}>
+                    Copy link
+                  </button>
+                  <a className="btn ghost" href={publicLink} target="_blank" rel="noreferrer">
+                    Open public form
+                  </a>
+                </div>
+                {shareStatus ? <p className="muted">{shareStatus}</p> : null}
+                {qrImageUrl ? (
+                  <img
+                    className="share-qr"
+                    src={qrImageUrl}
+                    alt="QR code for public disposable attendance check-in"
+                  />
+                ) : null}
               </div>
 
               {!activeItem.isArchived ? (

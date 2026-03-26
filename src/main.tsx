@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { HashRouter, Route, Routes } from "react-router-dom";
 import App from "./App";
 import LandingPage from "./components/LandingPage";
+import PublicDisposableCheckInPage from "./components/PublicDisposableCheckInPage";
 import "./styles.css";
 
 type NavPage = "home" | "about" | "contact" | "faqs" | "plans" | "login" | "signup";
@@ -36,6 +37,7 @@ createRoot(rootElement).render(
         <Route path="/app/analytics" element={<App />} />
         <Route path="/app/disposable" element={<App />} />
         <Route path="/app/settings" element={<App />} />
+        <Route path="/public/disposable/:attendanceId" element={<PublicDisposableCheckInPage />} />
       </Routes>
     </HashRouter>
   </React.StrictMode>

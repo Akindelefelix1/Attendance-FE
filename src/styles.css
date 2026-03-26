@@ -1566,6 +1566,62 @@ input {
   gap: 0.65rem;
 }
 
+.share-block {
+  align-items: start;
+}
+
+.share-qr {
+  width: 160px;
+  height: 160px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 0.4rem;
+}
+
+.public-checkin-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: linear-gradient(180deg, #fffaf3 0%, #ffffff 100%);
+}
+
+.public-checkin-card {
+  width: min(620px, 100%);
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.public-checkin-header {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.public-checkin-form {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.public-checkin-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.public-success {
+  background: #e9f9f1;
+  border: 1px solid #b4e6cc;
+  color: #1e6c4b;
+  padding: 0.6rem 0.75rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
 .analytics-hero {
   display: flex;
   justify-content: space-between;
@@ -2549,6 +2605,11 @@ input {
     grid-template-columns: 1fr;
   }
 
+  .share-qr {
+    width: 140px;
+    height: 140px;
+  }
+
   .org-head {
     display: none;
   }
@@ -2638,6 +2699,10 @@ input {
 
   .modal-backdrop {
     padding: 0.65rem;
+  }
+
+  .public-checkin-shell {
+    padding: 0.75rem;
   }
 }
 

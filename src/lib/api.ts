@@ -321,6 +321,11 @@ export const listDisposableAttendances = async (orgId: string) => {
   return store.attendances.filter((item) => item.orgId === orgId);
 };
 
+export const getDisposableAttendanceById = async (attendanceId: string) => {
+  const store = readDisposableStore();
+  return store.attendances.find((item) => item.id === attendanceId) ?? null;
+};
+
 export const createDisposableAttendance = async (payload: {
   orgId: string;
   title: string;
