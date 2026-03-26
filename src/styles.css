@@ -2225,3 +2225,215 @@ input {
     align-items: flex-start;
   }
 }
+
+@media (max-width: 700px) {
+  .app-shell {
+    padding: 1.5rem 1rem 2.5rem;
+  }
+
+  .app-shell.with-fixed-nav {
+    padding-top: 1rem;
+  }
+
+  .admin-nav {
+    position: sticky;
+  }
+
+  .landing {
+    padding: 1rem 1rem 0;
+  }
+
+  .top-nav {
+    padding: 0.65rem 0.75rem;
+    border-radius: 14px;
+    margin-bottom: 1.5rem;
+  }
+
+  .nav-links,
+  .nav-actions,
+  .topbar-actions {
+    width: 100%;
+  }
+
+  .nav-link {
+    flex: 1 1 calc(50% - 0.5rem);
+    justify-content: center;
+  }
+
+  .nav-actions .btn,
+  .topbar-actions .nav-pill {
+    flex: 1 1 calc(50% - 0.5rem);
+    justify-content: center;
+  }
+
+  .auth-card,
+  .panel,
+  .panel.wide,
+  .modal,
+  .modal.modal-wide {
+    padding: 1rem;
+  }
+
+  .auth-password-field {
+    flex-wrap: wrap;
+  }
+
+  .auth-password-toggle {
+    width: 100%;
+  }
+
+  .landing-hero {
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .landing-hero-panel {
+    padding: 1.25rem;
+    gap: 1.25rem;
+    border-radius: 18px;
+  }
+
+  .hero-image-frame {
+    min-height: 220px;
+  }
+
+  .hero-phone.primary {
+    width: 86%;
+    right: 7%;
+  }
+
+  .landing-hero-card,
+  .landing-section,
+  .landing-card,
+  .landing-footer,
+  .site-footer {
+    padding: 1rem;
+  }
+
+  .site-footer {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    width: calc(100% + 2rem);
+  }
+
+  .summary-row,
+  .summary-row.admin-summary-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .summary-card,
+  .admin-summary-row .summary-card {
+    min-width: 0;
+  }
+
+  .view-toggle,
+  .trend-card-grid,
+  .staff-dashboard-card .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-actions,
+  .org-actions,
+  .role-input,
+  .gate-row,
+  .modal-actions,
+  .analytics-range,
+  .analytics-filters,
+  .action-row,
+  .cta-card.cta-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .org-add {
+    grid-template-columns: 1fr;
+  }
+
+  .org-head {
+    display: none;
+  }
+
+  .org-row {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-row,
+  .analytics-row,
+  .compact-table .analytics-row,
+  .compact-table .analytics-head,
+  .role-row,
+  .role-head,
+  .reliability-row,
+  .reliability-head {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-row .cell.staff,
+  .analytics-row .cell.staff {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .date-select input,
+  .role-edit-input,
+  .gate-row input,
+  .gate-row .auth-password-field,
+  .gate-row .btn,
+  .role-input input,
+  .role-input select,
+  .role-input .btn,
+  .org-actions .btn,
+  .settings-actions .btn,
+  .analytics-range .btn,
+  .trend-actions .btn,
+  .modal-actions .btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .activity-bar {
+    width: 100%;
+    border-radius: 12px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell,
+  .landing {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .site-footer {
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    width: calc(100% + 1.5rem);
+    padding: 0.9rem;
+  }
+
+  .nav-link,
+  .nav-actions .btn,
+  .topbar-actions .nav-pill {
+    flex-basis: 100%;
+  }
+
+  .brand-mark,
+  .avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .attendance-row,
+  .analytics-row,
+  .org-row {
+    padding: 0.7rem;
+  }
+
+  .modal-backdrop {
+    padding: 0.65rem;
+  }
+}
