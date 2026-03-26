@@ -1532,6 +1532,14 @@ input {
   flex-wrap: wrap;
 }
 
+.disposable-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  align-items: center;
+}
+
 .disposable-layout {
   display: grid;
   gap: 1rem;
@@ -1602,6 +1610,80 @@ input {
 .disposable-responses {
   display: grid;
   gap: 0.65rem;
+}
+
+.disposable-select-row {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 520px;
+  font-weight: 600;
+}
+
+.disposable-create-modal {
+  display: grid;
+  gap: 0.75rem;
+  max-height: min(72vh, 760px);
+  overflow: auto;
+  padding-right: 0.2rem;
+}
+
+.removable-pill-row {
+  align-items: center;
+}
+
+.removable-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.removable-pill button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+
+.removable-pill button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.disposable-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.disposable-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.disposable-table th,
+.disposable-table td {
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  padding: 0.7rem 0.75rem;
+  vertical-align: top;
+  font-size: 0.88rem;
+}
+
+.disposable-table th {
+  background: #fffaf3;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.disposable-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .share-block {
@@ -2625,6 +2707,7 @@ input {
   .org-actions,
   .role-input,
   .disposable-actions,
+  .disposable-header-actions,
   .gate-row,
   .modal-actions,
   .analytics-range,
@@ -2641,6 +2724,10 @@ input {
 
   .disposable-custom-row {
     grid-template-columns: 1fr;
+  }
+
+  .disposable-select-row {
+    max-width: 100%;
   }
 
   .share-qr {

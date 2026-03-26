@@ -82,6 +82,13 @@ type ToastState = {
   message: string;
 };
 
+type EditableCustomField = {
+  id: string;
+  label: string;
+};
+
+const standardFieldIds = new Set(["full-name", "email", "phone", "occupation", "address"]);
+
 const DisposableAttendancePage = ({ organization }: Props) => {
   const [items, setItems] = useState<DisposableAttendance[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -104,14 +111,25 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [recurrenceEndDateISO, setRecurrenceEndDateISO] = useState<string>("");
   const [recurrenceCustomRule, setRecurrenceCustomRule] = useState("");
   const [createError, setCreateError] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const [responseValues, setResponseValues] = useState<Record<string, string>>({});
   const [responseError, setResponseError] = useState("");
+  const [editCollect, setEditCollect] = useState<FieldToggleState>({
+    email: true,
+    phone: false,
+    occupation: false,
+    address: false
+  });
+  const [editCustomFieldInput, setEditCustomFieldInput] = useState("");
+  const [editCustomFields, setEditCustomFields] = useState<EditableCustomField[]>([]);
+  const [editFieldsError, setEditFieldsError] = useState("");
   const [loadError, setLoadError] = useState("");
   const [manageError, setManageError] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isManaging, setIsManaging] = useState(false);
+  const [isSavingFields, setIsSavingFields] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
   const activeItem = useMemo(
@@ -188,6 +206,15 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   useEffect(() => {
     if (!activeItem) {
       setResponseValues({});
+      setEditCollect({
+        email: true,
+        phone: false,
+        occupation: false,
+        address: false
+      });
+      setEditCustomFields([]);
+      setEditCustomFieldInput("");
+      setEditFieldsError("");
       return;
     }
     const initial: Record<string, string> = {};
@@ -195,6 +222,20 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       initial[field.id] = "";
     });
     setResponseValues(initial);
+
+    setEditCollect({
+      email: activeItem.fields.some((field) => field.id === "email"),
+      phone: activeItem.fields.some((field) => field.id === "phone"),
+      occupation: activeItem.fields.some((field) => field.id === "occupation"),
+      address: activeItem.fields.some((field) => field.id === "address")
+    });
+    setEditCustomFields(
+      activeItem.fields
+        .filter((field) => !standardFieldIds.has(field.id))
+        .map((field) => ({ id: field.id, label: field.label }))
+    );
+    setEditCustomFieldInput("");
+    setEditFieldsError("");
   }, [activeItem?.id]);
 
   const canCreate = items.length < limit;
@@ -220,6 +261,31 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     }
     setCustomFields((prev) => [...prev, trimmed]);
     setCustomFieldInput("");
+  };
+
+  const handleRemoveCreateCustomField = (label: string) => {
+    setCustomFields((prev) => prev.filter((item) => item !== label));
+  };
+
+  const handleAddEditCustomField = () => {
+    const trimmed = editCustomFieldInput.trim();
+    if (!trimmed) return;
+    if (editCustomFields.some((field) => field.label.toLowerCase() === trimmed.toLowerCase())) {
+      setEditCustomFieldInput("");
+      return;
+    }
+    setEditCustomFields((prev) => [
+      ...prev,
+      {
+        id: `custom-${toSlug(trimmed)}-${Math.random().toString(36).slice(2, 6)}`,
+        label: trimmed
+      }
+    ]);
+    setEditCustomFieldInput("");
+  };
+
+  const handleRemoveEditCustomField = (fieldId: string) => {
+    setEditCustomFields((prev) => prev.filter((field) => field.id !== fieldId));
   };
 
   const handleCreate = async () => {
@@ -290,6 +356,8 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       setRecurrenceMode("none");
       setRecurrenceEndDateISO("");
       setRecurrenceCustomRule("");
+      setIsCreateModalOpen(false);
+      showToast("success", "Disposable attendance created.");
 
       await reloadItems();
     } catch (error) {
@@ -298,6 +366,51 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       showToast("error", message);
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleSaveCollectedDetails = async () => {
+    if (!activeItem || !organization) return;
+    setEditFieldsError("");
+
+    const nextFields: DisposableField[] = [
+      { id: "full-name", label: "Full name", type: "full-name", required: true }
+    ];
+
+    if (editCollect.email) {
+      nextFields.push({ id: "email", label: "Email", type: "email", required: true });
+    }
+    if (editCollect.phone) {
+      nextFields.push({ id: "phone", label: "Phone number", type: "phone", required: true });
+    }
+    if (editCollect.occupation) {
+      nextFields.push({ id: "occupation", label: "Occupation", type: "occupation", required: false });
+    }
+    if (editCollect.address) {
+      nextFields.push({ id: "address", label: "Address", type: "address", required: false });
+    }
+
+    editCustomFields.forEach((field) => {
+      nextFields.push({
+        id: field.id,
+        label: field.label,
+        type: "text",
+        required: false
+      });
+    });
+
+    try {
+      setIsSavingFields(true);
+      await updateDisposableAttendance(activeItem.id, organization.id, { fields: nextFields });
+      await reloadItems();
+      await reloadResponses(activeItem.id);
+      showToast("success", "Details to collect updated.");
+    } catch (error) {
+      const message = getErrorMessage(error, "Could not update details to collect.");
+      setEditFieldsError(message);
+      showToast("error", message);
+    } finally {
+      setIsSavingFields(false);
     }
   };
 
@@ -433,354 +546,484 @@ const DisposableAttendancePage = ({ organization }: Props) => {
             Create event-based attendance forms outside regular staff check-ins.
           </p>
         </div>
-        <div className="pill-row">
-          <span className="pill">Plan: {planTier}</span>
-          <span className="pill">
-            {items.length}/{limit} forms used
-          </span>
+        <div className="disposable-header-actions">
+          <div className="pill-row">
+            <span className="pill">Plan: {planTier}</span>
+            <span className="pill">
+              {items.length}/{limit} forms used
+            </span>
+          </div>
+          <button
+            className="btn solid"
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            disabled={!canCreate}
+          >
+            {canCreate ? "Create disposable attendance" : "Tier limit reached"}
+          </button>
         </div>
       </div>
 
-      <div className="disposable-layout">
-        <div className="disposable-create panel">
-          <h3>Create disposable attendance</h3>
-          <label>
-            Title
-            <input
-              type="text"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="e.g. Quarterly Townhall"
-              disabled={!canCreate || isCreating}
-            />
-          </label>
-          <label>
-            Description
-            <input
-              type="text"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Optional notes"
-              disabled={!canCreate || isCreating}
-            />
-          </label>
-          <label>
-            Location
-            <input
-              type="text"
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              placeholder="Venue or room"
-              disabled={!canCreate || isCreating}
-            />
-          </label>
-          <label>
-            Event date
-            <input
-              type="date"
-              value={eventDateISO}
-              onChange={(event) => setEventDateISO(event.target.value)}
-              disabled={!canCreate || isCreating}
-            />
-          </label>
+      <div className="disposable-manage panel">
+        <h3>Manage disposable attendance</h3>
+        {loadError ? <p className="auth-error">{loadError}</p> : null}
+        {manageError ? <p className="auth-error">{manageError}</p> : null}
 
-          <div className="disposable-block">
-            <strong>Details to collect</strong>
-            <label className="workday-chip">
-              <input
-                type="checkbox"
-                checked={collect.email}
-                onChange={(event) =>
-                  setCollect((prev) => ({ ...prev, email: event.target.checked }))
-                }
-                disabled={!canCreate || isCreating}
-              />
-              Email
-            </label>
-            <label className="workday-chip">
-              <input
-                type="checkbox"
-                checked={collect.phone}
-                onChange={(event) =>
-                  setCollect((prev) => ({ ...prev, phone: event.target.checked }))
-                }
-                disabled={!canCreate || isCreating}
-              />
-              Phone number
-            </label>
-            <label className="workday-chip">
-              <input
-                type="checkbox"
-                checked={collect.occupation}
-                onChange={(event) =>
-                  setCollect((prev) => ({ ...prev, occupation: event.target.checked }))
-                }
-                disabled={!canCreate || isCreating}
-              />
-              Occupation
-            </label>
-            <label className="workday-chip">
-              <input
-                type="checkbox"
-                checked={collect.address}
-                onChange={(event) =>
-                  setCollect((prev) => ({ ...prev, address: event.target.checked }))
-                }
-                disabled={!canCreate || isCreating}
-              />
-              Address
-            </label>
-
-            <div className="disposable-custom-row">
-              <input
-                type="text"
-                value={customFieldInput}
-                onChange={(event) => setCustomFieldInput(event.target.value)}
-                placeholder="Add custom field (Others)"
-                disabled={!canCreate || isCreating}
-              />
-              <button className="btn ghost" type="button" onClick={handleAddCustomField} disabled={!canCreate || isCreating}>
-                Add field
-              </button>
-            </div>
-            {customFields.length > 0 ? (
-              <div className="pill-row">
-                {customFields.map((field) => (
-                  <span className="pill" key={field}>
-                    {field}
-                  </span>
-                ))}
-              </div>
-            ) : null}
+        {items.length === 0 ? (
+          <div className="empty-state compact">
+            <p className="muted">No disposable attendance created yet.</p>
           </div>
-
-          <div className="disposable-block">
-            <label className="toggle-pill">
-              <input
-                type="checkbox"
-                checked={isRecurring}
-                onChange={(event) => {
-                  const next = event.target.checked;
-                  setIsRecurring(next);
-                  if (!next) {
-                    setRecurrenceMode("none");
-                    setRecurrenceEndDateISO("");
-                    setRecurrenceCustomRule("");
-                  } else {
-                    setRecurrenceMode("weekly");
-                  }
-                }}
-                disabled={!canCreate || isCreating}
-              />
-              Recurring attendance
-            </label>
-
-            {isRecurring ? (
-              <>
-                <label>
-                  Recurrence type
-                  <select
-                    value={recurrenceMode}
-                    onChange={(event) =>
-                      setRecurrenceMode(event.target.value as DisposableAttendance["recurrenceMode"])
-                    }
-                    disabled={!canCreate || isCreating}
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="custom">Custom (irregular)</option>
-                  </select>
-                </label>
-                {recurrenceMode === "custom" ? (
-                  <label>
-                    Manual schedule / duration details
-                    <input
-                      type="text"
-                      value={recurrenceCustomRule}
-                      onChange={(event) => setRecurrenceCustomRule(event.target.value)}
-                      placeholder="e.g. 1st and 3rd Fridays, skip public holidays"
-                      disabled={!canCreate || isCreating}
-                    />
-                  </label>
-                ) : (
-                  <label>
-                    Repeat until (optional)
-                    <input
-                      type="date"
-                      value={recurrenceEndDateISO}
-                      onChange={(event) => setRecurrenceEndDateISO(event.target.value)}
-                      disabled={!canCreate || isCreating}
-                    />
-                  </label>
-                )}
-              </>
-            ) : null}
-          </div>
-
-          {createError ? <p className="auth-error">{createError}</p> : null}
-
-          <button className="btn solid" type="button" onClick={handleCreate} disabled={!canCreate || isCreating}>
-            {canCreate ? (isCreating ? "Creating..." : "Create disposable attendance") : "Tier limit reached"}
-          </button>
-        </div>
-
-        <div className="disposable-manage panel">
-          <h3>Manage disposable attendance</h3>
-          {loadError ? <p className="auth-error">{loadError}</p> : null}
-          {manageError ? <p className="auth-error">{manageError}</p> : null}
-          {items.length === 0 ? (
-            <div className="empty-state compact">
-              <p className="muted">No disposable attendance created yet.</p>
-            </div>
-          ) : (
-            <div className="disposable-list">
+        ) : (
+          <label className="disposable-select-row">
+            Select attendance event
+            <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
               {items.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`disposable-item ${selectedId === item.id ? "active" : ""}`}
-                  onClick={() => setSelectedId(item.id)}
-                >
-                  <strong>{item.title}</strong>
-                  <span className="muted">{formatDateLong(item.eventDateISO)}</span>
-                  <span className="muted">{recurrenceLabel(item)}</span>
-                  <span className="muted">{item.isArchived ? "Archived" : "Active"}</span>
-                </button>
+                <option key={item.id} value={item.id}>
+                  {item.title} • {formatDateLong(item.eventDateISO)} • {item.isArchived ? "Archived" : "Active"}
+                </option>
               ))}
+            </select>
+          </label>
+        )}
+
+        {activeItem ? (
+          <>
+            <div className="section-header-row">
+              <h3>{activeItem.title}</h3>
+              <div className="disposable-actions">
+                <button
+                  className="btn ghost"
+                  type="button"
+                  onClick={handleToggleArchive}
+                  disabled={isManaging || isSubmitting || isCreating || isSavingFields}
+                >
+                  {activeItem.isArchived ? "Reopen" : "Archive"}
+                </button>
+                <button className="btn ghost" type="button" onClick={handleExport}>
+                  Export CSV
+                </button>
+                <button
+                  className="btn ghost danger"
+                  type="button"
+                  onClick={handleDeleteActive}
+                  disabled={isManaging || isSubmitting || isCreating || isSavingFields}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-          )}
 
-          {activeItem ? (
-            <>
-              <div className="section-header-row">
-                <h3>{activeItem.title}</h3>
-                <div className="disposable-actions">
-                  <button
-                    className="btn ghost"
-                    type="button"
-                    onClick={handleToggleArchive}
-                    disabled={isManaging || isSubmitting || isCreating}
-                  >
-                    {activeItem.isArchived ? "Reopen" : "Archive"}
-                  </button>
-                  <button className="btn ghost" type="button" onClick={handleExport}>
-                    Export CSV
-                  </button>
-                  <button
-                    className="btn ghost danger"
-                    type="button"
-                    onClick={handleDeleteActive}
-                    disabled={isManaging || isSubmitting || isCreating}
-                  >
-                    Delete
-                  </button>
-                </div>
+            <div className="disposable-block">
+              <p className="muted">{activeItem.description || "No description"}</p>
+              <div className="pill-row">
+                <span className="pill">{activeItem.location || "No location"}</span>
+                <span className="pill">{recurrenceLabel(activeItem)}</span>
+                <span className="pill">{responses.length} responses</span>
+              </div>
+            </div>
+
+            <div className="disposable-block">
+              <h4>Edit details to collect</h4>
+              <p className="muted">Full name is always required for each attendee.</p>
+              <label className="workday-chip">
+                <input
+                  type="checkbox"
+                  checked={editCollect.email}
+                  onChange={(event) =>
+                    setEditCollect((prev) => ({ ...prev, email: event.target.checked }))
+                  }
+                  disabled={isSavingFields || isManaging}
+                />
+                Email
+              </label>
+              <label className="workday-chip">
+                <input
+                  type="checkbox"
+                  checked={editCollect.phone}
+                  onChange={(event) =>
+                    setEditCollect((prev) => ({ ...prev, phone: event.target.checked }))
+                  }
+                  disabled={isSavingFields || isManaging}
+                />
+                Phone number
+              </label>
+              <label className="workday-chip">
+                <input
+                  type="checkbox"
+                  checked={editCollect.occupation}
+                  onChange={(event) =>
+                    setEditCollect((prev) => ({ ...prev, occupation: event.target.checked }))
+                  }
+                  disabled={isSavingFields || isManaging}
+                />
+                Occupation
+              </label>
+              <label className="workday-chip">
+                <input
+                  type="checkbox"
+                  checked={editCollect.address}
+                  onChange={(event) =>
+                    setEditCollect((prev) => ({ ...prev, address: event.target.checked }))
+                  }
+                  disabled={isSavingFields || isManaging}
+                />
+                Address
+              </label>
+
+              <div className="disposable-custom-row">
+                <input
+                  type="text"
+                  value={editCustomFieldInput}
+                  onChange={(event) => setEditCustomFieldInput(event.target.value)}
+                  placeholder="Add custom detail field"
+                  disabled={isSavingFields || isManaging}
+                />
+                <button
+                  className="btn ghost"
+                  type="button"
+                  onClick={handleAddEditCustomField}
+                  disabled={isSavingFields || isManaging}
+                >
+                  Add field
+                </button>
               </div>
 
-              <div className="disposable-block">
-                <p className="muted">{activeItem.description || "No description"}</p>
-                <div className="pill-row">
-                  <span className="pill">{activeItem.location || "No location"}</span>
-                  <span className="pill">{recurrenceLabel(activeItem)}</span>
-                  <span className="pill">{responses.length} responses</span>
-                </div>
-              </div>
-
-              <div className="disposable-block share-block">
-                <h4>Public self check-in</h4>
-                <p className="muted">
-                  Share this link or QR code so attendees can check in themselves.
-                  Admin check-in still works below.
-                </p>
-                <label>
-                  Shareable link
-                  <input type="text" value={publicLink} readOnly />
-                </label>
-                <div className="disposable-actions">
-                  <button className="btn ghost" type="button" onClick={handleCopyPublicLink}>
-                    Copy link
-                  </button>
-                  <a className="btn ghost" href={publicLink} target="_blank" rel="noreferrer">
-                    Open public form
-                  </a>
-                </div>
-                {qrImageUrl ? (
-                  <img
-                    className="share-qr"
-                    src={qrImageUrl}
-                    alt="QR code for public disposable attendance check-in"
-                  />
-                ) : null}
-              </div>
-
-              {!activeItem.isArchived ? (
-                <div className="disposable-block">
-                  <h4>Take attendance</h4>
-                  <div className="disposable-response-form">
-                    {activeItem.fields.map((field) => (
-                      <label key={field.id}>
-                        {field.label}
-                        <input
-                          type={field.type === "email" ? "email" : "text"}
-                          value={responseValues[field.id] ?? ""}
-                          onChange={(event) =>
-                            setResponseValues((prev) => ({
-                              ...prev,
-                              [field.id]: event.target.value
-                            }))
-                          }
-                          placeholder={`Enter ${fieldTypeToLabel(field.type).toLowerCase()}`}
-                        />
-                      </label>
-                    ))}
-                    {responseError ? <p className="auth-error">{responseError}</p> : null}
-                    <button
-                      className="btn solid"
-                      type="button"
-                      onClick={handleSubmitResponse}
-                      disabled={isSubmitting || isManaging}
-                    >
-                      Submit attendance response
-                    </button>
-                  </div>
+              {editCustomFields.length > 0 ? (
+                <div className="pill-row removable-pill-row">
+                  {editCustomFields.map((field) => (
+                    <span className="pill removable-pill" key={field.id}>
+                      {field.label}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveEditCustomField(field.id)}
+                        aria-label={`Remove ${field.label}`}
+                        disabled={isSavingFields || isManaging}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
                 </div>
               ) : null}
 
-              <div className="disposable-responses">
-                <h4>Responses</h4>
-                {responses.length === 0 ? (
-                  <p className="muted">No responses yet.</p>
-                ) : (
-                  <div className="analytics-table compact-table">
-                    <div className="analytics-head">
-                      <span>Submitted</span>
-                      <span>Attendee</span>
-                      <span>Details</span>
-                    </div>
-                    {responses.map((response) => (
-                      <div className="analytics-row" key={response.id}>
-                        <div className="cell" data-label="Submitted">
-                          {formatDateLong(response.submittedAtISO.slice(0, 10))}
-                        </div>
-                        <div className="cell" data-label="Attendee">
-                          {response.values["full-name"] || "—"}
-                        </div>
-                        <div className="cell" data-label="Details">
-                          {activeItem.fields
-                            .filter((field) => field.id !== "full-name")
-                            .map((field) => `${field.label}: ${response.values[field.id] || "—"}`)
-                            .join(" • ") || "—"}
-                        </div>
-                      </div>
+              {editFieldsError ? <p className="auth-error">{editFieldsError}</p> : null}
+              <button
+                className="btn solid"
+                type="button"
+                onClick={handleSaveCollectedDetails}
+                disabled={isSavingFields || isManaging || isSubmitting || isCreating}
+              >
+                {isSavingFields ? "Saving..." : "Save details collected"}
+              </button>
+            </div>
+
+            <div className="disposable-block share-block">
+              <h4>Public self check-in</h4>
+              <p className="muted">
+                Share this link or QR code so attendees can check in themselves.
+                Admin check-in still works below.
+              </p>
+              <label>
+                Shareable link
+                <input type="text" value={publicLink} readOnly />
+              </label>
+              <div className="disposable-actions">
+                <button className="btn ghost" type="button" onClick={handleCopyPublicLink}>
+                  Copy link
+                </button>
+                <a className="btn ghost" href={publicLink} target="_blank" rel="noreferrer">
+                  Open public form
+                </a>
+              </div>
+              {qrImageUrl ? (
+                <img
+                  className="share-qr"
+                  src={qrImageUrl}
+                  alt="QR code for public disposable attendance check-in"
+                />
+              ) : null}
+            </div>
+
+            {!activeItem.isArchived ? (
+              <div className="disposable-block">
+                <h4>Take attendance</h4>
+                <div className="disposable-response-form">
+                  {activeItem.fields.map((field) => (
+                    <label key={field.id}>
+                      {field.label}
+                      <input
+                        type={field.type === "email" ? "email" : "text"}
+                        value={responseValues[field.id] ?? ""}
+                        onChange={(event) =>
+                          setResponseValues((prev) => ({
+                            ...prev,
+                            [field.id]: event.target.value
+                          }))
+                        }
+                        placeholder={`Enter ${fieldTypeToLabel(field.type).toLowerCase()}`}
+                      />
+                    </label>
+                  ))}
+                  {responseError ? <p className="auth-error">{responseError}</p> : null}
+                  <button
+                    className="btn solid"
+                    type="button"
+                    onClick={handleSubmitResponse}
+                    disabled={isSubmitting || isManaging || isSavingFields}
+                  >
+                    Submit attendance response
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="disposable-responses">
+              <h4>Responses</h4>
+              {responses.length === 0 ? (
+                <p className="muted">No responses yet.</p>
+              ) : (
+                <div className="disposable-table-wrap">
+                  <table className="disposable-table">
+                    <thead>
+                      <tr>
+                        <th>Submitted</th>
+                        {activeItem.fields.map((field) => (
+                          <th key={field.id}>{field.label}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {responses.map((response) => (
+                        <tr key={response.id}>
+                          <td>{formatDateLong(response.submittedAtISO.slice(0, 10))}</td>
+                          {activeItem.fields.map((field) => (
+                            <td key={`${response.id}-${field.id}`}>{response.values[field.id] || "—"}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        ) : null}
+      </div>
+
+      {isCreateModalOpen ? (
+        <div className="modal-backdrop" role="presentation">
+          <div className="modal modal-wide" role="dialog" aria-modal="true" aria-label="Create disposable attendance">
+            <div className="modal-header">
+              <h3>Create disposable attendance</h3>
+            </div>
+
+            <div className="disposable-create-modal">
+              <label>
+                Title
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="e.g. Quarterly Townhall"
+                  disabled={!canCreate || isCreating}
+                />
+              </label>
+              <label>
+                Description
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="Optional notes"
+                  disabled={!canCreate || isCreating}
+                />
+              </label>
+              <label>
+                Location
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(event) => setLocation(event.target.value)}
+                  placeholder="Venue or room"
+                  disabled={!canCreate || isCreating}
+                />
+              </label>
+              <label>
+                Event date
+                <input
+                  type="date"
+                  value={eventDateISO}
+                  onChange={(event) => setEventDateISO(event.target.value)}
+                  disabled={!canCreate || isCreating}
+                />
+              </label>
+
+              <div className="disposable-block">
+                <strong>Details to collect</strong>
+                <label className="workday-chip">
+                  <input
+                    type="checkbox"
+                    checked={collect.email}
+                    onChange={(event) =>
+                      setCollect((prev) => ({ ...prev, email: event.target.checked }))
+                    }
+                    disabled={!canCreate || isCreating}
+                  />
+                  Email
+                </label>
+                <label className="workday-chip">
+                  <input
+                    type="checkbox"
+                    checked={collect.phone}
+                    onChange={(event) =>
+                      setCollect((prev) => ({ ...prev, phone: event.target.checked }))
+                    }
+                    disabled={!canCreate || isCreating}
+                  />
+                  Phone number
+                </label>
+                <label className="workday-chip">
+                  <input
+                    type="checkbox"
+                    checked={collect.occupation}
+                    onChange={(event) =>
+                      setCollect((prev) => ({ ...prev, occupation: event.target.checked }))
+                    }
+                    disabled={!canCreate || isCreating}
+                  />
+                  Occupation
+                </label>
+                <label className="workday-chip">
+                  <input
+                    type="checkbox"
+                    checked={collect.address}
+                    onChange={(event) =>
+                      setCollect((prev) => ({ ...prev, address: event.target.checked }))
+                    }
+                    disabled={!canCreate || isCreating}
+                  />
+                  Address
+                </label>
+
+                <div className="disposable-custom-row">
+                  <input
+                    type="text"
+                    value={customFieldInput}
+                    onChange={(event) => setCustomFieldInput(event.target.value)}
+                    placeholder="Add custom field (Others)"
+                    disabled={!canCreate || isCreating}
+                  />
+                  <button
+                    className="btn ghost"
+                    type="button"
+                    onClick={handleAddCustomField}
+                    disabled={!canCreate || isCreating}
+                  >
+                    Add field
+                  </button>
+                </div>
+                {customFields.length > 0 ? (
+                  <div className="pill-row removable-pill-row">
+                    {customFields.map((field) => (
+                      <span className="pill removable-pill" key={field}>
+                        {field}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCreateCustomField(field)}
+                          aria-label={`Remove ${field}`}
+                          disabled={!canCreate || isCreating}
+                        >
+                          ×
+                        </button>
+                      </span>
                     ))}
                   </div>
-                )}
+                ) : null}
               </div>
-            </>
-          ) : null}
+
+              <div className="disposable-block">
+                <label className="toggle-pill">
+                  <input
+                    type="checkbox"
+                    checked={isRecurring}
+                    onChange={(event) => {
+                      const next = event.target.checked;
+                      setIsRecurring(next);
+                      if (!next) {
+                        setRecurrenceMode("none");
+                        setRecurrenceEndDateISO("");
+                        setRecurrenceCustomRule("");
+                      } else {
+                        setRecurrenceMode("weekly");
+                      }
+                    }}
+                    disabled={!canCreate || isCreating}
+                  />
+                  Recurring attendance
+                </label>
+
+                {isRecurring ? (
+                  <>
+                    <label>
+                      Recurrence type
+                      <select
+                        value={recurrenceMode}
+                        onChange={(event) =>
+                          setRecurrenceMode(event.target.value as DisposableAttendance["recurrenceMode"])
+                        }
+                        disabled={!canCreate || isCreating}
+                      >
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="custom">Custom (irregular)</option>
+                      </select>
+                    </label>
+                    {recurrenceMode === "custom" ? (
+                      <label>
+                        Manual schedule / duration details
+                        <input
+                          type="text"
+                          value={recurrenceCustomRule}
+                          onChange={(event) => setRecurrenceCustomRule(event.target.value)}
+                          placeholder="e.g. 1st and 3rd Fridays, skip public holidays"
+                          disabled={!canCreate || isCreating}
+                        />
+                      </label>
+                    ) : (
+                      <label>
+                        Repeat until (optional)
+                        <input
+                          type="date"
+                          value={recurrenceEndDateISO}
+                          onChange={(event) => setRecurrenceEndDateISO(event.target.value)}
+                          disabled={!canCreate || isCreating}
+                        />
+                      </label>
+                    )}
+                  </>
+                ) : null}
+              </div>
+
+              {createError ? <p className="auth-error">{createError}</p> : null}
+            </div>
+
+            <div className="modal-actions">
+              <button
+                className="btn ghost"
+                type="button"
+                onClick={() => setIsCreateModalOpen(false)}
+                disabled={isCreating}
+              >
+                Cancel
+              </button>
+              <button className="btn solid" type="button" onClick={handleCreate} disabled={!canCreate || isCreating}>
+                {isCreating ? "Creating..." : "Create disposable attendance"}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      ) : null}
     </section>
   );
 };
