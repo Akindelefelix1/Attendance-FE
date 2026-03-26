@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { HashRouter, Route, Routes } from "react-router-dom";
 import App from "./App";
 import LandingPage from "./components/LandingPage";
 import "./styles.css";
@@ -12,11 +12,7 @@ type LandingRouteProps = {
 };
 
 const LandingRoute = ({ page }: LandingRouteProps) => {
-  const handleEnter = () => {
-    window.location.assign("/login");
-  };
-
-  return <LandingPage page={page} onEnter={handleEnter} />;
+  return <LandingPage page={page} />;
 };
 
 const rootElement = document.getElementById("root");
@@ -26,7 +22,7 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<LandingRoute page="home" />} />
         <Route path="/about" element={<LandingRoute page="about" />} />
@@ -40,6 +36,6 @@ createRoot(rootElement).render(
         <Route path="/app/analytics" element={<App />} />
         <Route path="/app/settings" element={<App />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   </React.StrictMode>
 );

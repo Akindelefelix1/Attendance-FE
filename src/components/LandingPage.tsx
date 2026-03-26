@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { createOrganization, loginAdmin, loginStaff, registerAdmin } from "../lib/api";
 
 type Props = {
-  onEnter: () => void;
   page: "home" | "about" | "contact" | "faqs" | "plans" | "login" | "signup";
 };
 
