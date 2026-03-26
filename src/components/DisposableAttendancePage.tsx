@@ -8,9 +8,10 @@ import type {
 import {
   createDisposableAttendance,
   deleteDisposableAttendance,
+  getDisposableAttendanceResponsesTable,
   listDisposableAttendances,
-  listDisposableAttendanceResponses,
   submitDisposableAttendanceResponse,
+  updateDisposableAttendanceFields,
   updateDisposableAttendance
 } from "../lib/api";
 import { formatDateLong, getTodayISO } from "../lib/time";
@@ -93,6 +94,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [items, setItems] = useState<DisposableAttendance[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [responses, setResponses] = useState<DisposableAttendanceResponse[]>([]);
+  const [responseColumns, setResponseColumns] = useState<Array<{ key: string; label: string }>>([]);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -177,14 +179,25 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const reloadResponses = async (attendanceId: string) => {
     if (!organization) {
       setResponses([]);
+      setResponseColumns([]);
       return;
     }
     try {
       setManageError("");
-      const next = await listDisposableAttendanceResponses(attendanceId, organization.id);
-      setResponses(next);
+      const table = await getDisposableAttendanceResponsesTable(attendanceId, organization.id);
+      setResponseColumns(table.columns);
+      setResponses(
+        table.rows.map((row) => ({
+          id: row.id,
+          attendanceId,
+          source: row.source,
+          submittedAtISO: row.submittedAtISO,
+          values: row.values
+        }))
+      );
     } catch (error) {
       setResponses([]);
+      setResponseColumns([]);
       const message = getErrorMessage(error, "Could not load responses.");
       setManageError(message);
       showToast("error", message);
@@ -198,6 +211,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   useEffect(() => {
     if (!selectedId) {
       setResponses([]);
+      setResponseColumns([]);
       return;
     }
     void reloadResponses(selectedId);
@@ -401,7 +415,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
 
     try {
       setIsSavingFields(true);
-      await updateDisposableAttendance(activeItem.id, organization.id, { fields: nextFields });
+      await updateDisposableAttendanceFields(activeItem.id, organization.id, nextFields);
       await reloadItems();
       await reloadResponses(activeItem.id);
       showToast("success", "Details to collect updated.");
@@ -786,19 +800,20 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                   <table className="disposable-table">
                     <thead>
                       <tr>
-                        <th>Submitted</th>
-                        {activeItem.fields.map((field) => (
-                          <th key={field.id}>{field.label}</th>
+                        {responseColumns.map((column) => (
+                          <th key={column.key}>{column.label}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {responses.map((response) => (
                         <tr key={response.id}>
-                          <td>{formatDateLong(response.submittedAtISO.slice(0, 10))}</td>
-                          {activeItem.fields.map((field) => (
-                            <td key={`${response.id}-${field.id}`}>{response.values[field.id] || "—"}</td>
-                          ))}
+                          {responseColumns.map((column) => {
+                            if (column.key === "submittedAtISO") {
+                              return <td key={`${response.id}-${column.key}`}>{formatDateLong(response.submittedAtISO.slice(0, 10))}</td>;
+                            }
+                            return <td key={`${response.id}-${column.key}`}>{response.values[column.key] || "—"}</td>;
+                          })}
                         </tr>
                       ))}
                     </tbody>

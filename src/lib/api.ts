@@ -4,6 +4,7 @@ import type {
   DisposableAttendance,
   DisposableAttendanceResponse,
   DisposableField,
+  DisposableResponsesTable,
   PublicDisposableAttendanceForm,
   OrgSettings,
   Organization,
@@ -319,10 +320,20 @@ export const deleteDisposableAttendance = async (attendanceId: string, orgId: st
     method: "DELETE"
   });
 
-export const listDisposableAttendanceResponses = async (attendanceId: string, orgId: string) =>
-  request<DisposableAttendanceResponse[]>(
-    `/disposable-attendance/${attendanceId}/responses?orgId=${encodeURIComponent(orgId)}`
+export const getDisposableAttendanceResponsesTable = async (attendanceId: string, orgId: string) =>
+  request<DisposableResponsesTable>(
+    `/disposable-attendance/${attendanceId}/responses-table?orgId=${encodeURIComponent(orgId)}`
   );
+
+export const updateDisposableAttendanceFields = async (
+  attendanceId: string,
+  orgId: string,
+  fields: DisposableField[]
+) =>
+  request<DisposableAttendance>(`/disposable-attendance/${attendanceId}/fields`, {
+    method: "PATCH",
+    body: JSON.stringify({ orgId, fields })
+  });
 
 export const submitDisposableAttendanceResponse = async (payload: {
   attendanceId: string;

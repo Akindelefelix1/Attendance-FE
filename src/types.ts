@@ -160,6 +160,25 @@ export type DisposableAttendanceResponse = {
   values: Record<string, string>;
 };
 
+export type DisposableResponsesTableColumn = {
+  key: string;
+  label: string;
+};
+
+export type DisposableResponsesTableRow = {
+  id: string;
+  submittedAtISO: string;
+  source: string;
+  values: Record<string, string>;
+};
+
+export type DisposableResponsesTable = {
+  attendanceId: string;
+  attendanceTitle: string;
+  columns: DisposableResponsesTableColumn[];
+  rows: DisposableResponsesTableRow[];
+};
+
 export type PublicDisposableAttendanceForm = {
   publicId: string;
   title: string;
