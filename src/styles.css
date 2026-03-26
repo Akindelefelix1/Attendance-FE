@@ -207,6 +207,32 @@ select {
   width: 100%;
 }
 
+.auth-password-field {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.auth-password-field input {
+  flex: 1;
+}
+
+.auth-password-toggle {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 0.55rem 0.8rem;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.auth-password-toggle:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .auth-error {
   background: #ffe9e3;
   border: 1px solid #f9b9a7;

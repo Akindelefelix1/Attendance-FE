@@ -47,6 +47,8 @@ const LandingPage = ({ page }: Props) => {
   const [signupPassword, setSignupPassword] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [loginMode, setLoginMode] = useState<"admin" | "staff">("admin");
   const [authError, setAuthError] = useState("");
   const [authBusy, setAuthBusy] = useState<"login" | "signup" | null>(null);
@@ -218,12 +220,23 @@ const LandingPage = ({ page }: Props) => {
                 </label>
                 <label>
                   Password
-                  <input
-                    type="password"
-                    value={loginPassword}
-                    onChange={(event) => setLoginPassword(event.target.value)}
-                    disabled={isBusy}
-                  />
+                  <div className="auth-password-field">
+                    <input
+                      type={showLoginPassword ? "text" : "password"}
+                      value={loginPassword}
+                      onChange={(event) => setLoginPassword(event.target.value)}
+                      disabled={isBusy}
+                    />
+                    <button
+                      className="auth-password-toggle"
+                      type="button"
+                      onClick={() => setShowLoginPassword((prev) => !prev)}
+                      disabled={isBusy}
+                      aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                    >
+                      {showLoginPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
                 </label>
                 {loginMode === "staff" ? (
                   <p className="muted">
@@ -278,12 +291,23 @@ const LandingPage = ({ page }: Props) => {
                 </label>
                 <label>
                   Password
-                  <input
-                    type="password"
-                    value={signupPassword}
-                    onChange={(event) => setSignupPassword(event.target.value)}
-                    disabled={isBusy}
-                  />
+                  <div className="auth-password-field">
+                    <input
+                      type={showSignupPassword ? "text" : "password"}
+                      value={signupPassword}
+                      onChange={(event) => setSignupPassword(event.target.value)}
+                      disabled={isBusy}
+                    />
+                    <button
+                      className="auth-password-toggle"
+                      type="button"
+                      onClick={() => setShowSignupPassword((prev) => !prev)}
+                      disabled={isBusy}
+                      aria-label={showSignupPassword ? "Hide password" : "Show password"}
+                    >
+                      {showSignupPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
                 </label>
                 <button
                   className="btn solid"
