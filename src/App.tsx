@@ -70,6 +70,7 @@ const App = () => {
     null
   );
   const [navCompact, setNavCompact] = useState(false);
+  const [mobileTopbarOpen, setMobileTopbarOpen] = useState(false);
   const [showOnboardModal, setShowOnboardModal] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -151,6 +152,10 @@ const App = () => {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    setMobileTopbarOpen(false);
+  }, [location.pathname, sessionRole, viewMode]);
 
   const refreshOrganizations = async () => {
     const orgs = await listOrganizations();
@@ -367,6 +372,7 @@ const App = () => {
   const effectiveViewMode: ViewMode = isAdmin ? viewMode : "staff";
 
   const handleSwitchToAdmin = () => {
+    setMobileTopbarOpen(false);
     setShowAdminGate(true);
   };
 
@@ -393,6 +399,7 @@ const App = () => {
   };
 
   const handleSwitchToStaff = () => {
+    setMobileTopbarOpen(false);
     setViewMode("staff");
     setShowAdminGate(false);
   };
@@ -506,7 +513,11 @@ const App = () => {
         </div>
       ) : null}
 
-      <div className={`topbar admin-nav ${navCompact ? "compact" : ""}`}>
+      <div
+        className={`topbar admin-nav ${navCompact ? "compact" : ""} ${
+          mobileTopbarOpen ? "menu-open" : ""
+        }`}
+      >
         <div className="nav-brand">
           <strong>{effectiveViewMode === "admin" ? "Admin view" : "Staff view"}</strong>
           <span className="nav-subtitle">
@@ -515,12 +526,46 @@ const App = () => {
               : "Read-only for settings"}
           </span>
         </div>
-        <div className="topbar-actions nav-links">
+        <button
+          className="app-menu-toggle"
+          type="button"
+          onClick={() => setMobileTopbarOpen((prev) => !prev)}
+          aria-expanded={mobileTopbarOpen}
+          aria-controls="app-topbar-menu"
+          aria-label={mobileTopbarOpen ? "Close menu" : "Open menu"}
+        >
+          {mobileTopbarOpen ? (
+            <svg viewBox="0 0 24 24" role="presentation" aria-hidden="true">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" role="presentation" aria-hidden="true">
+              <path
+                d="M4 7h16M4 12h16M4 17h16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          )}
+        </button>
+        <div className="topbar-actions nav-links topbar-menu" id="app-topbar-menu">
           {isDashboardPage ? null : (
             <button
               className="nav-pill"
               type="button"
-              onClick={() => navigate("/app")}
+              onClick={() => {
+                setMobileTopbarOpen(false);
+                navigate("/app");
+              }}
             >
               <span className="nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="presentation">
@@ -569,9 +614,10 @@ const App = () => {
             <button
               className={`nav-pill ${isOrganizationsPage ? "active" : ""}`}
               type="button"
-              onClick={() =>
-                navigate(isOrganizationsPage ? "/app" : "/app/organizations")
-              }
+              onClick={() => {
+                setMobileTopbarOpen(false);
+                navigate(isOrganizationsPage ? "/app" : "/app/organizations");
+              }}
             >
               <span className="nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="presentation">
@@ -588,7 +634,10 @@ const App = () => {
             <button
               className={`nav-pill ${isAnalyticsPage ? "active" : ""}`}
               type="button"
-              onClick={() => navigate(isAnalyticsPage ? "/app" : "/app/analytics")}
+              onClick={() => {
+                setMobileTopbarOpen(false);
+                navigate(isAnalyticsPage ? "/app" : "/app/analytics");
+              }}
             >
               <span className="nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="presentation">
@@ -608,7 +657,10 @@ const App = () => {
             <button
               className={`nav-pill ${isSettingsPage ? "active" : ""}`}
               type="button"
-              onClick={() => navigate(isSettingsPage ? "/app" : "/app/settings")}
+              onClick={() => {
+                setMobileTopbarOpen(false);
+                navigate(isSettingsPage ? "/app" : "/app/settings");
+              }}
             >
               <span className="nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="presentation">
@@ -622,7 +674,14 @@ const App = () => {
             </button>
           ) : null}
           {isStaffSession ? (
-            <button className="nav-pill" type="button" onClick={handleRequestLogout}>
+            <button
+              className="nav-pill"
+              type="button"
+              onClick={() => {
+                setMobileTopbarOpen(false);
+                handleRequestLogout();
+              }}
+            >
               <span className="nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="presentation">
                   <path
