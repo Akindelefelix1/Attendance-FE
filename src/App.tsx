@@ -27,6 +27,7 @@ import StaffDashboard from "./components/StaffDashboard";
 import ConfirmModal from "./components/ConfirmModal";
 import OrganizationsPage from "./components/OrganizationsPage";
 import AnalyticsPage from "./components/AnalyticsPage";
+import DisposableAttendancePage from "./components/DisposableAttendancePage";
 
 type ViewMode = "admin" | "staff";
 
@@ -42,6 +43,7 @@ const App = () => {
   const location = useLocation();
   const isOrganizationsPage = location.pathname === "/app/organizations";
   const isAnalyticsPage = location.pathname === "/app/analytics";
+  const isDisposablePage = location.pathname === "/app/disposable";
   const isSettingsPage = location.pathname === "/app/settings";
   const isDashboardPage = location.pathname === "/app";
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -655,6 +657,30 @@ const App = () => {
           ) : null}
           {effectiveViewMode === "admin" ? (
             <button
+              className={`nav-pill ${isDisposablePage ? "active" : ""}`}
+              type="button"
+              onClick={() => {
+                setMobileTopbarOpen(false);
+                navigate(isDisposablePage ? "/app" : "/app/disposable");
+              }}
+            >
+              <span className="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="presentation">
+                  <path
+                    d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm3 4h6M8 12h8m-8 4h5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+              {isDisposablePage ? "Back to dashboard" : "Disposable"}
+            </button>
+          ) : null}
+          {effectiveViewMode === "admin" ? (
+            <button
               className={`nav-pill ${isSettingsPage ? "active" : ""}`}
               type="button"
               onClick={() => {
@@ -716,6 +742,10 @@ const App = () => {
       ) : isAnalyticsPage && effectiveViewMode === "admin" ? (
         <main className="layout full">
           <AnalyticsPage organization={selectedOrg} />
+        </main>
+      ) : isDisposablePage && effectiveViewMode === "admin" ? (
+        <main className="layout full">
+          <DisposableAttendancePage organization={selectedOrg} />
         </main>
       ) : isSettingsPage && effectiveViewMode === "admin" ? (
         <main className="layout full">

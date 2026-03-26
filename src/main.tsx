@@ -34,6 +34,7 @@ createRoot(rootElement).render(
         <Route path="/app" element={<App />} />
         <Route path="/app/organizations" element={<App />} />
         <Route path="/app/analytics" element={<App />} />
+        <Route path="/app/disposable" element={<App />} />
         <Route path="/app/settings" element={<App />} />
       </Routes>
     </HashRouter>

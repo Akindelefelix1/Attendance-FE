@@ -115,3 +115,43 @@ export type AnalyticsResponse = {
   roleInsights: RoleInsight[];
   geoPolicyCompliance: GeoPolicyCompliance;
 };
+
+export type DisposableFieldType =
+  | "full-name"
+  | "email"
+  | "phone"
+  | "occupation"
+  | "address"
+  | "text";
+
+export type DisposableField = {
+  id: string;
+  label: string;
+  type: DisposableFieldType;
+  required: boolean;
+};
+
+export type DisposableRecurrenceMode = "none" | "daily" | "weekly" | "monthly" | "custom";
+
+export type DisposableAttendance = {
+  id: string;
+  orgId: string;
+  title: string;
+  description: string;
+  location: string;
+  eventDateISO: string;
+  fields: DisposableField[];
+  isRecurring: boolean;
+  recurrenceMode: DisposableRecurrenceMode;
+  recurrenceEndDateISO: string | null;
+  recurrenceCustomRule: string;
+  isArchived: boolean;
+  createdAtISO: string;
+};
+
+export type DisposableAttendanceResponse = {
+  id: string;
+  attendanceId: string;
+  submittedAtISO: string;
+  values: Record<string, string>;
+};
