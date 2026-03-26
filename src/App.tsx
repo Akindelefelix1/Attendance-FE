@@ -52,6 +52,7 @@ const App = () => {
   const [staffEmail, setStaffEmail] = useState("");
   const [adminEmailInput, setAdminEmailInput] = useState("");
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
+  const [showAdminPasswordInput, setShowAdminPasswordInput] = useState(false);
   const [adminSession, setAdminSession] = useState<{
     email: string;
     orgId: string;
@@ -384,8 +385,10 @@ const App = () => {
       setViewMode("admin");
       setShowAdminGate(false);
       setAdminPasswordInput("");
+      setShowAdminPasswordInput(false);
     } catch {
       setAdminPasswordInput("");
+      setShowAdminPasswordInput(false);
     }
   };
 
@@ -398,6 +401,7 @@ const App = () => {
     setShowAdminGate(false);
     setAdminEmailInput("");
     setAdminPasswordInput("");
+    setShowAdminPasswordInput(false);
   };
 
   const handleOpenOnboard = () => setShowOnboardModal(true);
@@ -1092,12 +1096,22 @@ const App = () => {
                 onChange={(event) => setAdminEmailInput(event.target.value)}
                 placeholder="Admin email"
               />
-              <input
-                type="password"
-                value={adminPasswordInput}
-                onChange={(event) => setAdminPasswordInput(event.target.value)}
-                placeholder="Password"
-              />
+              <div className="auth-password-field">
+                <input
+                  type={showAdminPasswordInput ? "text" : "password"}
+                  value={adminPasswordInput}
+                  onChange={(event) => setAdminPasswordInput(event.target.value)}
+                  placeholder="Password"
+                />
+                <button
+                  className="auth-password-toggle"
+                  type="button"
+                  onClick={() => setShowAdminPasswordInput((prev) => !prev)}
+                  aria-label={showAdminPasswordInput ? "Hide password" : "Show password"}
+                >
+                  {showAdminPasswordInput ? "Hide" : "Show"}
+                </button>
+              </div>
               <button className="btn solid" type="button" onClick={handleAdminAccess}>
                 Continue
               </button>
