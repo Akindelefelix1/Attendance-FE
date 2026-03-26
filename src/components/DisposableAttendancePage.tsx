@@ -70,6 +70,13 @@ const fieldTypeToLabel = (type: DisposableField["type"]) => {
   return "Text";
 };
 
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
+};
+
 const DisposableAttendancePage = ({ organization }: Props) => {
   const [items, setItems] = useState<DisposableAttendance[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -96,6 +103,11 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [responseValues, setResponseValues] = useState<Record<string, string>>({});
   const [responseError, setResponseError] = useState("");
   const [shareStatus, setShareStatus] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [manageError, setManageError] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isManaging, setIsManaging] = useState(false);
 
   const activeItem = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
@@ -109,14 +121,22 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     if (!organization) {
       setItems([]);
       setSelectedId("");
+      setLoadError("");
       return;
     }
-    const next = await listDisposableAttendances(organization.id);
-    setItems(next);
-    setSelectedId((prev) => {
-      if (prev && next.some((item) => item.id === prev)) return prev;
-      return next[0]?.id ?? "";
-    });
+    try {
+      setLoadError("");
+      const next = await listDisposableAttendances(organization.id);
+      setItems(next);
+      setSelectedId((prev) => {
+        if (prev && next.some((item) => item.id === prev)) return prev;
+        return next[0]?.id ?? "";
+      });
+    } catch (error) {
+      setItems([]);
+      setSelectedId("");
+      setLoadError(getErrorMessage(error, "Could not load disposable attendance."));
+    }
   };
 
   const reloadResponses = async (attendanceId: string) => {
@@ -124,8 +144,14 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       setResponses([]);
       return;
     }
-    const next = await listDisposableAttendanceResponses(attendanceId, organization.id);
-    setResponses(next);
+    try {
+      setManageError("");
+      const next = await listDisposableAttendanceResponses(attendanceId, organization.id);
+      setResponses(next);
+    } catch (error) {
+      setResponses([]);
+      setManageError(getErrorMessage(error, "Could not load responses."));
+    }
   };
 
   useEffect(() => {
@@ -181,6 +207,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     if (!organization) return;
     if (!canCreate) return;
     setCreateError("");
+    setManageError("");
     if (!title.trim()) {
       setCreateError("Provide a title for this attendance.");
       return;
@@ -218,37 +245,45 @@ const DisposableAttendancePage = ({ organization }: Props) => {
         ? recurrenceEndDateISO
         : null;
 
-    await createDisposableAttendance({
-      orgId: organization.id,
-      title: title.trim(),
-      description: description.trim(),
-      location: location.trim(),
-      eventDateISO,
-      fields,
-      isRecurring,
-      recurrenceMode: normalizedRecurring,
-      recurrenceEndDateISO: normalizedEndDate,
-      recurrenceCustomRule:
-        isRecurring && recurrenceMode === "custom" ? recurrenceCustomRule.trim() : ""
-    });
+    try {
+      setIsCreating(true);
+      await createDisposableAttendance({
+        orgId: organization.id,
+        title: title.trim(),
+        description: description.trim(),
+        location: location.trim(),
+        eventDateISO,
+        fields,
+        isRecurring,
+        recurrenceMode: normalizedRecurring,
+        recurrenceEndDateISO: normalizedEndDate,
+        recurrenceCustomRule:
+          isRecurring && recurrenceMode === "custom" ? recurrenceCustomRule.trim() : ""
+      });
 
-    setTitle("");
-    setDescription("");
-    setLocation("");
-    setEventDateISO(getTodayISO());
-    setCollect({ email: true, phone: false, occupation: false, address: false });
-    setCustomFields([]);
-    setIsRecurring(false);
-    setRecurrenceMode("none");
-    setRecurrenceEndDateISO("");
-    setRecurrenceCustomRule("");
+      setTitle("");
+      setDescription("");
+      setLocation("");
+      setEventDateISO(getTodayISO());
+      setCollect({ email: true, phone: false, occupation: false, address: false });
+      setCustomFields([]);
+      setIsRecurring(false);
+      setRecurrenceMode("none");
+      setRecurrenceEndDateISO("");
+      setRecurrenceCustomRule("");
 
-    await reloadItems();
+      await reloadItems();
+    } catch (error) {
+      setCreateError(getErrorMessage(error, "Could not create disposable attendance."));
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleSubmitResponse = async () => {
     if (!activeItem || !organization) return;
     setResponseError("");
+    setManageError("");
 
     for (const field of activeItem.fields) {
       const value = responseValues[field.id]?.trim() ?? "";
@@ -258,20 +293,57 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       }
     }
 
-    await submitDisposableAttendanceResponse({
-      attendanceId: activeItem.id,
-      orgId: organization.id,
-      values: Object.fromEntries(
-        Object.entries(responseValues).map(([key, value]) => [key, value.trim()])
-      )
-    });
+    try {
+      setIsSubmitting(true);
+      await submitDisposableAttendanceResponse({
+        attendanceId: activeItem.id,
+        orgId: organization.id,
+        values: Object.fromEntries(
+          Object.entries(responseValues).map(([key, value]) => [key, value.trim()])
+        )
+      });
 
-    const resetValues: Record<string, string> = {};
-    activeItem.fields.forEach((field) => {
-      resetValues[field.id] = "";
-    });
-    setResponseValues(resetValues);
-    await reloadResponses(activeItem.id);
+      const resetValues: Record<string, string> = {};
+      activeItem.fields.forEach((field) => {
+        resetValues[field.id] = "";
+      });
+      setResponseValues(resetValues);
+      await reloadResponses(activeItem.id);
+    } catch (error) {
+      setResponseError(getErrorMessage(error, "Could not submit attendance response."));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleToggleArchive = async () => {
+    if (!activeItem || !organization) return;
+    try {
+      setIsManaging(true);
+      setManageError("");
+      await updateDisposableAttendance(activeItem.id, organization.id, {
+        isArchived: !activeItem.isArchived
+      });
+      await reloadItems();
+    } catch (error) {
+      setManageError(getErrorMessage(error, "Could not update disposable attendance."));
+    } finally {
+      setIsManaging(false);
+    }
+  };
+
+  const handleDeleteActive = async () => {
+    if (!activeItem || !organization) return;
+    try {
+      setIsManaging(true);
+      setManageError("");
+      await deleteDisposableAttendance(activeItem.id, organization.id);
+      await reloadItems();
+    } catch (error) {
+      setManageError(getErrorMessage(error, "Could not delete disposable attendance."));
+    } finally {
+      setIsManaging(false);
+    }
   };
 
   const handleExport = () => {
@@ -341,7 +413,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="e.g. Quarterly Townhall"
-              disabled={!canCreate}
+              disabled={!canCreate || isCreating}
             />
           </label>
           <label>
@@ -351,7 +423,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Optional notes"
-              disabled={!canCreate}
+              disabled={!canCreate || isCreating}
             />
           </label>
           <label>
@@ -361,7 +433,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
               value={location}
               onChange={(event) => setLocation(event.target.value)}
               placeholder="Venue or room"
-              disabled={!canCreate}
+              disabled={!canCreate || isCreating}
             />
           </label>
           <label>
@@ -370,7 +442,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
               type="date"
               value={eventDateISO}
               onChange={(event) => setEventDateISO(event.target.value)}
-              disabled={!canCreate}
+              disabled={!canCreate || isCreating}
             />
           </label>
 
@@ -383,7 +455,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                 onChange={(event) =>
                   setCollect((prev) => ({ ...prev, email: event.target.checked }))
                 }
-                disabled={!canCreate}
+                disabled={!canCreate || isCreating}
               />
               Email
             </label>
@@ -394,7 +466,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                 onChange={(event) =>
                   setCollect((prev) => ({ ...prev, phone: event.target.checked }))
                 }
-                disabled={!canCreate}
+                disabled={!canCreate || isCreating}
               />
               Phone number
             </label>
@@ -405,7 +477,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                 onChange={(event) =>
                   setCollect((prev) => ({ ...prev, occupation: event.target.checked }))
                 }
-                disabled={!canCreate}
+                disabled={!canCreate || isCreating}
               />
               Occupation
             </label>
@@ -416,7 +488,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                 onChange={(event) =>
                   setCollect((prev) => ({ ...prev, address: event.target.checked }))
                 }
-                disabled={!canCreate}
+                disabled={!canCreate || isCreating}
               />
               Address
             </label>
@@ -427,9 +499,9 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                 value={customFieldInput}
                 onChange={(event) => setCustomFieldInput(event.target.value)}
                 placeholder="Add custom field (Others)"
-                disabled={!canCreate}
+                disabled={!canCreate || isCreating}
               />
-              <button className="btn ghost" type="button" onClick={handleAddCustomField} disabled={!canCreate}>
+              <button className="btn ghost" type="button" onClick={handleAddCustomField} disabled={!canCreate || isCreating}>
                 Add field
               </button>
             </div>
@@ -460,7 +532,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                     setRecurrenceMode("weekly");
                   }
                 }}
-                disabled={!canCreate}
+                disabled={!canCreate || isCreating}
               />
               Recurring attendance
             </label>
@@ -474,7 +546,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                     onChange={(event) =>
                       setRecurrenceMode(event.target.value as DisposableAttendance["recurrenceMode"])
                     }
-                    disabled={!canCreate}
+                    disabled={!canCreate || isCreating}
                   >
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
@@ -490,7 +562,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                       value={recurrenceCustomRule}
                       onChange={(event) => setRecurrenceCustomRule(event.target.value)}
                       placeholder="e.g. 1st and 3rd Fridays, skip public holidays"
-                      disabled={!canCreate}
+                      disabled={!canCreate || isCreating}
                     />
                   </label>
                 ) : (
@@ -500,7 +572,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                       type="date"
                       value={recurrenceEndDateISO}
                       onChange={(event) => setRecurrenceEndDateISO(event.target.value)}
-                      disabled={!canCreate}
+                      disabled={!canCreate || isCreating}
                     />
                   </label>
                 )}
@@ -510,13 +582,15 @@ const DisposableAttendancePage = ({ organization }: Props) => {
 
           {createError ? <p className="auth-error">{createError}</p> : null}
 
-          <button className="btn solid" type="button" onClick={handleCreate} disabled={!canCreate}>
-            {canCreate ? "Create disposable attendance" : "Tier limit reached"}
+          <button className="btn solid" type="button" onClick={handleCreate} disabled={!canCreate || isCreating}>
+            {canCreate ? (isCreating ? "Creating..." : "Create disposable attendance") : "Tier limit reached"}
           </button>
         </div>
 
         <div className="disposable-manage panel">
           <h3>Manage disposable attendance</h3>
+          {loadError ? <p className="auth-error">{loadError}</p> : null}
+          {manageError ? <p className="auth-error">{manageError}</p> : null}
           {items.length === 0 ? (
             <div className="empty-state compact">
               <p className="muted">No disposable attendance created yet.</p>
@@ -547,11 +621,8 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                   <button
                     className="btn ghost"
                     type="button"
-                    onClick={() =>
-                      void updateDisposableAttendance(activeItem.id, organization.id, {
-                        isArchived: !activeItem.isArchived
-                      }).then(() => reloadItems())
-                    }
+                    onClick={handleToggleArchive}
+                    disabled={isManaging || isSubmitting || isCreating}
                   >
                     {activeItem.isArchived ? "Reopen" : "Archive"}
                   </button>
@@ -561,11 +632,8 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                   <button
                     className="btn ghost danger"
                     type="button"
-                    onClick={() =>
-                      void deleteDisposableAttendance(activeItem.id, organization.id).then(
-                        () => reloadItems()
-                      )
-                    }
+                    onClick={handleDeleteActive}
+                    disabled={isManaging || isSubmitting || isCreating}
                   >
                     Delete
                   </button>
@@ -630,7 +698,12 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                       </label>
                     ))}
                     {responseError ? <p className="auth-error">{responseError}</p> : null}
-                    <button className="btn solid" type="button" onClick={handleSubmitResponse}>
+                    <button
+                      className="btn solid"
+                      type="button"
+                      onClick={handleSubmitResponse}
+                      disabled={isSubmitting || isManaging}
+                    >
                       Submit attendance response
                     </button>
                   </div>
