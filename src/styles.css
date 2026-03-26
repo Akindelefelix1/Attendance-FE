@@ -175,6 +175,27 @@ select {
   flex-wrap: wrap;
 }
 
+.top-nav-menu {
+  display: flex;
+  gap: 1rem;
+  margin-left: auto;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.mobile-menu-toggle {
+  display: none;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 0.35rem 0.55rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .auth-page {
   display: grid;
   place-items: center;
@@ -2247,6 +2268,28 @@ input {
     padding: 0.65rem 0.75rem;
     border-radius: 14px;
     margin-bottom: 1.5rem;
+  }
+
+  .mobile-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+  }
+
+  .top-nav-menu {
+    display: none;
+    width: 100%;
+    margin-left: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.7rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .top-nav.menu-open .top-nav-menu {
+    display: flex;
   }
 
   .nav-links,

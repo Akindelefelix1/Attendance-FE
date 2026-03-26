@@ -52,6 +52,7 @@ const LandingPage = ({ page }: Props) => {
   const [loginMode, setLoginMode] = useState<"admin" | "staff">("admin");
   const [authError, setAuthError] = useState("");
   const [authBusy, setAuthBusy] = useState<"login" | "signup" | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const heroImages = [
     "https://res.cloudinary.com/doxxevnyt/image/upload/v1773662233/8b9bce25-da3f-4c63-a9c4-6c543a15e1f1_yteu7o.png"
   ];
@@ -138,49 +139,75 @@ const LandingPage = ({ page }: Props) => {
     }
   }, [page]);
 
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [page]);
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
   return (
     <div className="landing">
-      <nav className="top-nav">
+      <nav className={`top-nav ${mobileMenuOpen ? "menu-open" : ""}`}>
         <div className="brand">
           <span className="brand-mark">A</span>
           <span>Attendance</span>
         </div>
-        <div className="nav-links">
-          <Link className={page === "home" ? "nav-link active" : "nav-link"} to="/">
-            Home
-          </Link>
-          <Link
-            className={page === "about" ? "nav-link active" : "nav-link"}
-            to="/about"
-          >
-            About us
-          </Link>
-          <Link
-            className={page === "contact" ? "nav-link active" : "nav-link"}
-            to="/contact"
-          >
-            Contact us
-          </Link>
-          <Link
-            className={page === "faqs" ? "nav-link active" : "nav-link"}
-            to="/faqs"
-          >
-            FAQs
-          </Link>
-          <Link
-            className={page === "plans" ? "nav-link active" : "nav-link"}
-            to="/plans"
-          >
-            Plans
-          </Link>
-        </div>
-        <div className="nav-actions">
-          <Link className="btn ghost" to="/login">
-            Log in
-          </Link>
-          <Link className="btn solid" to="/signup">
-            Sign up
-          </Link>
+        <button
+          className="mobile-menu-toggle"
+          type="button"
+          onClick={() => setMobileMenuOpen((prev) => !prev)}
+          aria-expanded={mobileMenuOpen}
+          aria-controls="top-nav-menu"
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+        >
+          {mobileMenuOpen ? "✕" : "☰"}
+        </button>
+        <div className="top-nav-menu" id="top-nav-menu">
+          <div className="nav-links">
+            <Link
+              className={page === "home" ? "nav-link active" : "nav-link"}
+              to="/"
+              onClick={closeMobileMenu}
+            >
+              Home
+            </Link>
+            <Link
+              className={page === "about" ? "nav-link active" : "nav-link"}
+              to="/about"
+              onClick={closeMobileMenu}
+            >
+              About us
+            </Link>
+            <Link
+              className={page === "contact" ? "nav-link active" : "nav-link"}
+              to="/contact"
+              onClick={closeMobileMenu}
+            >
+              Contact us
+            </Link>
+            <Link
+              className={page === "faqs" ? "nav-link active" : "nav-link"}
+              to="/faqs"
+              onClick={closeMobileMenu}
+            >
+              FAQs
+            </Link>
+            <Link
+              className={page === "plans" ? "nav-link active" : "nav-link"}
+              to="/plans"
+              onClick={closeMobileMenu}
+            >
+              Plans
+            </Link>
+          </div>
+          <div className="nav-actions">
+            <Link className="btn ghost" to="/login" onClick={closeMobileMenu}>
+              Log in
+            </Link>
+            <Link className="btn solid" to="/signup" onClick={closeMobileMenu}>
+              Sign up
+            </Link>
+          </div>
         </div>
       </nav>
 
