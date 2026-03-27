@@ -1,9 +1,24 @@
 ﻿import { useMemo, useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { createOrganization, loginAdmin, loginStaff, registerAdmin } from "../lib/api";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  createOrganization,
+  loginAdmin,
+  loginStaff,
+  registerAdmin,
+  requestAdminVerify,
+  verifyAdmin
+} from "../lib/api";
 
 type Props = {
-  page: "home" | "about" | "contact" | "faqs" | "plans" | "login" | "signup";
+  page:
+    | "home"
+    | "about"
+    | "contact"
+    | "faqs"
+    | "plans"
+    | "login"
+    | "signup"
+    | "verify-email";
 };
 
 type FaqEntry = {
@@ -41,6 +56,7 @@ const faqEntries: FaqEntry[] = [
 
 const LandingPage = ({ page }: Props) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [signupOrgName, setSignupOrgName] = useState("");
   const [signupLocation, setSignupLocation] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
@@ -51,7 +67,12 @@ const LandingPage = ({ page }: Props) => {
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [loginMode, setLoginMode] = useState<"admin" | "staff">("admin");
   const [authError, setAuthError] = useState("");
+  const [authNotice, setAuthNotice] = useState("");
   const [authBusy, setAuthBusy] = useState<"login" | "signup" | null>(null);
+  const [verifyStatus, setVerifyStatus] = useState<"idle" | "verifying" | "success" | "error">(
+    "idle"
+  );
+  const [verifyMessage, setVerifyMessage] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const heroImages = [
     "https://res.cloudinary.com/doxxevnyt/image/upload/v1773662233/8b9bce25-da3f-4c63-a9c4-6c543a15e1f1_yteu7o.png"
@@ -62,6 +83,7 @@ const LandingPage = ({ page }: Props) => {
   const handleSignup = async () => {
     if (authBusy) return;
     setAuthError("");
+    setAuthNotice("");
     if (!signupOrgName || !signupLocation || !signupEmail || !signupPassword) {
       setAuthError("Please fill all fields.");
       return;
@@ -77,7 +99,10 @@ const LandingPage = ({ page }: Props) => {
         email: signupEmail.trim().toLowerCase(),
         password: signupPassword
       });
-      navigate("/app");
+      setAuthNotice(
+        "Verification email sent. Please check your inbox and verify before logging in."
+      );
+      setSignupPassword("");
     } catch {
       setAuthError("Could not create account. Please try again.");
     } finally {
@@ -88,6 +113,7 @@ const LandingPage = ({ page }: Props) => {
   const handleLogin = async () => {
     if (authBusy) return;
     setAuthError("");
+    setAuthNotice("");
     if (!loginEmail || !loginPassword) {
       setAuthError("Enter your email and password.");
       return;
@@ -106,12 +132,22 @@ const LandingPage = ({ page }: Props) => {
         });
       }
       navigate("/app");
-    } catch {
-      setAuthError(
-        loginMode === "staff"
-          ? "Invalid staff email or password."
-          : "Invalid admin email or password."
-      );
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "";
+      if (loginMode === "admin" && errorMessage.includes("Email not verified")) {
+        await requestAdminVerify({ email: loginEmail.trim().toLowerCase() }).catch(
+          () => undefined
+        );
+        setAuthError(
+          "Admin email is not verified yet. A new verification link has been sent."
+        );
+      } else {
+        setAuthError(
+          loginMode === "staff"
+            ? "Invalid staff email or password."
+            : "Invalid admin email or password."
+        );
+      }
     } finally {
       setAuthBusy(null);
     }
@@ -120,6 +156,7 @@ const LandingPage = ({ page }: Props) => {
   const authPageTitle = useMemo(() => {
     if (page === "login") return "Welcome back";
     if (page === "signup") return "Create organization";
+    if (page === "verify-email") return "Verify email";
     return "";
 }, [page]);
 
@@ -138,6 +175,32 @@ const LandingPage = ({ page }: Props) => {
       setOpenFaqId(null);
     }
   }, [page]);
+
+  useEffect(() => {
+    if (page !== "verify-email") {
+      return;
+    }
+
+    const token = new URLSearchParams(location.search).get("token")?.trim();
+    if (!token) {
+      setVerifyStatus("error");
+      setVerifyMessage("Verification token is missing from this link.");
+      return;
+    }
+
+    setVerifyStatus("verifying");
+    setVerifyMessage("");
+
+    verifyAdmin({ token })
+      .then(() => {
+        setVerifyStatus("success");
+        setVerifyMessage("Email verified successfully. Your account is now active.");
+      })
+      .catch(() => {
+        setVerifyStatus("error");
+        setVerifyMessage("Verification link is invalid or expired.");
+      });
+  }, [location.search, page]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -232,16 +295,19 @@ const LandingPage = ({ page }: Props) => {
         </div>
       </nav>
 
-      {page === "login" || page === "signup" ? (
+      {page === "login" || page === "signup" || page === "verify-email" ? (
         <section className="auth-page">
           <div className="auth-card">
             <h1>{authPageTitle}</h1>
             <p className="muted">
               {page === "login"
                 ? "Access your organization attendance dashboard."
-                : "Register your organization to get started."}
+                : page === "signup"
+                  ? "Register your organization to get started."
+                  : "Confirm your admin email to activate your account."}
             </p>
             {authError ? <p className="auth-error">{authError}</p> : null}
+            {authNotice ? <p className="auth-notice">{authNotice}</p> : null}
             {page === "login" ? (
               <div className="auth-form">
                 <label>
@@ -308,7 +374,7 @@ const LandingPage = ({ page }: Props) => {
                   Create new organization
                 </button>
               </div>
-            ) : (
+            ) : page === "signup" ? (
               <div className="auth-form">
                 <label>
                   Organization name
@@ -372,6 +438,24 @@ const LandingPage = ({ page }: Props) => {
                   disabled={isBusy}
                 >
                   Already have an account
+                </button>
+              </div>
+            ) : (
+              <div className="auth-form">
+                {verifyStatus === "verifying" ? (
+                  <p className="muted">Verifying your email...</p>
+                ) : null}
+                {verifyStatus === "success" ? (
+                  <p className="auth-notice">{verifyMessage}</p>
+                ) : null}
+                {verifyStatus === "error" ? (
+                  <p className="auth-error">{verifyMessage}</p>
+                ) : null}
+                <button className="btn solid" type="button" onClick={() => navigate("/app")}>
+                  Continue to app
+                </button>
+                <button className="btn ghost" type="button" onClick={() => navigate("/login")}>
+                  Back to login
                 </button>
               </div>
             )}

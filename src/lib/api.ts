@@ -237,8 +237,28 @@ export const registerAdmin = (payload: {
   email: string;
   password: string;
 }) =>
-  request<{ admin: { id: string; email: string; orgId: string } }>(
+  request<{
+    admin: { id: string; email: string; orgId: string };
+    verificationRequired?: boolean;
+    message?: string;
+    verificationToken?: string;
+  }>(
     "/auth/register",
+    {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }
+  );
+
+export const requestAdminVerify = (payload: { email: string }) =>
+  request<{ ok: boolean; verificationToken?: string }>("/auth/admin/request-verify", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+export const verifyAdmin = (payload: { token: string }) =>
+  request<{ ok: boolean; admin: { id: string; email: string; orgId: string } }>(
+    "/auth/admin/verify",
     {
       method: "POST",
       body: JSON.stringify(payload)

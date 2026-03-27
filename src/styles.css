@@ -270,6 +270,15 @@ select {
   font-weight: 600;
 }
 
+.auth-notice {
+  background: #e9f9f1;
+  border: 1px solid #b4e6cc;
+  color: #1e6c4b;
+  padding: 0.6rem 0.75rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
 .toast-banner {
   display: flex;
   align-items: center;
