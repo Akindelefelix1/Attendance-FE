@@ -1607,6 +1607,21 @@ input {
   gap: 0.35rem;
 }
 
+.disposable-collapsible {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.disposable-collapsible > summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.disposable-collapsible-content {
+  display: grid;
+  gap: 0.6rem;
+}
+
 .disposable-responses {
   display: grid;
   gap: 0.65rem;

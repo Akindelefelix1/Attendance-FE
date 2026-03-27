@@ -637,125 +637,133 @@ const DisposableAttendancePage = ({ organization }: Props) => {
             </div>
 
             <div className="disposable-block">
-              <h4>Edit details to collect</h4>
-              <p className="muted">Full name is always required for each attendee.</p>
-              <label className="workday-chip">
-                <input
-                  type="checkbox"
-                  checked={editCollect.email}
-                  onChange={(event) =>
-                    setEditCollect((prev) => ({ ...prev, email: event.target.checked }))
-                  }
-                  disabled={isSavingFields || isManaging}
-                />
-                Email
-              </label>
-              <label className="workday-chip">
-                <input
-                  type="checkbox"
-                  checked={editCollect.phone}
-                  onChange={(event) =>
-                    setEditCollect((prev) => ({ ...prev, phone: event.target.checked }))
-                  }
-                  disabled={isSavingFields || isManaging}
-                />
-                Phone number
-              </label>
-              <label className="workday-chip">
-                <input
-                  type="checkbox"
-                  checked={editCollect.occupation}
-                  onChange={(event) =>
-                    setEditCollect((prev) => ({ ...prev, occupation: event.target.checked }))
-                  }
-                  disabled={isSavingFields || isManaging}
-                />
-                Occupation
-              </label>
-              <label className="workday-chip">
-                <input
-                  type="checkbox"
-                  checked={editCollect.address}
-                  onChange={(event) =>
-                    setEditCollect((prev) => ({ ...prev, address: event.target.checked }))
-                  }
-                  disabled={isSavingFields || isManaging}
-                />
-                Address
-              </label>
+              <details className="disposable-collapsible">
+                <summary>Edit details to collect</summary>
+                <div className="disposable-collapsible-content">
+                  <p className="muted">Full name is always required for each attendee.</p>
+                  <label className="workday-chip">
+                    <input
+                      type="checkbox"
+                      checked={editCollect.email}
+                      onChange={(event) =>
+                        setEditCollect((prev) => ({ ...prev, email: event.target.checked }))
+                      }
+                      disabled={isSavingFields || isManaging}
+                    />
+                    Email
+                  </label>
+                  <label className="workday-chip">
+                    <input
+                      type="checkbox"
+                      checked={editCollect.phone}
+                      onChange={(event) =>
+                        setEditCollect((prev) => ({ ...prev, phone: event.target.checked }))
+                      }
+                      disabled={isSavingFields || isManaging}
+                    />
+                    Phone number
+                  </label>
+                  <label className="workday-chip">
+                    <input
+                      type="checkbox"
+                      checked={editCollect.occupation}
+                      onChange={(event) =>
+                        setEditCollect((prev) => ({ ...prev, occupation: event.target.checked }))
+                      }
+                      disabled={isSavingFields || isManaging}
+                    />
+                    Occupation
+                  </label>
+                  <label className="workday-chip">
+                    <input
+                      type="checkbox"
+                      checked={editCollect.address}
+                      onChange={(event) =>
+                        setEditCollect((prev) => ({ ...prev, address: event.target.checked }))
+                      }
+                      disabled={isSavingFields || isManaging}
+                    />
+                    Address
+                  </label>
 
-              <div className="disposable-custom-row">
-                <input
-                  type="text"
-                  value={editCustomFieldInput}
-                  onChange={(event) => setEditCustomFieldInput(event.target.value)}
-                  placeholder="Add custom detail field"
-                  disabled={isSavingFields || isManaging}
-                />
-                <button
-                  className="btn ghost"
-                  type="button"
-                  onClick={handleAddEditCustomField}
-                  disabled={isSavingFields || isManaging}
-                >
-                  Add field
-                </button>
-              </div>
+                  <div className="disposable-custom-row">
+                    <input
+                      type="text"
+                      value={editCustomFieldInput}
+                      onChange={(event) => setEditCustomFieldInput(event.target.value)}
+                      placeholder="Add custom detail field"
+                      disabled={isSavingFields || isManaging}
+                    />
+                    <button
+                      className="btn ghost"
+                      type="button"
+                      onClick={handleAddEditCustomField}
+                      disabled={isSavingFields || isManaging}
+                    >
+                      Add field
+                    </button>
+                  </div>
 
-              {editCustomFields.length > 0 ? (
-                <div className="pill-row removable-pill-row">
-                  {editCustomFields.map((field) => (
-                    <span className="pill removable-pill" key={field.id}>
-                      {field.label}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveEditCustomField(field.id)}
-                        aria-label={`Remove ${field.label}`}
-                        disabled={isSavingFields || isManaging}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+                  {editCustomFields.length > 0 ? (
+                    <div className="pill-row removable-pill-row">
+                      {editCustomFields.map((field) => (
+                        <span className="pill removable-pill" key={field.id}>
+                          {field.label}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveEditCustomField(field.id)}
+                            aria-label={`Remove ${field.label}`}
+                            disabled={isSavingFields || isManaging}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {editFieldsError ? <p className="auth-error">{editFieldsError}</p> : null}
+                  <button
+                    className="btn solid"
+                    type="button"
+                    onClick={handleSaveCollectedDetails}
+                    disabled={isSavingFields || isManaging || isSubmitting || isCreating}
+                  >
+                    {isSavingFields ? "Saving..." : "Save details collected"}
+                  </button>
                 </div>
-              ) : null}
-
-              {editFieldsError ? <p className="auth-error">{editFieldsError}</p> : null}
-              <button
-                className="btn solid"
-                type="button"
-                onClick={handleSaveCollectedDetails}
-                disabled={isSavingFields || isManaging || isSubmitting || isCreating}
-              >
-                {isSavingFields ? "Saving..." : "Save details collected"}
-              </button>
+              </details>
             </div>
 
             <div className="disposable-block share-block">
-              <h4>Public self check-in</h4>
-              <p className="muted">
-                Share this link or QR code so attendees can check in themselves.
-                Admin check-in still works below.
-              </p>
-              <label>
-                Shareable link
-                <input type="text" value={publicLink} readOnly />
-              </label>
-              <div className="disposable-actions">
-                <button className="btn ghost" type="button" onClick={handleCopyPublicLink}>
-                  Copy link
-                </button>
-                <a className="btn ghost" href={publicLink} target="_blank" rel="noreferrer">
-                  Open public form
-                </a>
-              </div>
-              {qrImageUrl ? (
-                <img
-                  className="share-qr"
-                  src={qrImageUrl}
-                  alt="QR code for public disposable attendance check-in"
-                />
-              ) : null}
+              <details className="disposable-collapsible">
+                <summary>Public self check-in</summary>
+                <div className="disposable-collapsible-content">
+                  <p className="muted">
+                    Share this link or QR code so attendees can check in themselves.
+                    Admin check-in still works below.
+                  </p>
+                  <label>
+                    Shareable link
+                    <input type="text" value={publicLink} readOnly />
+                  </label>
+                  <div className="disposable-actions">
+                    <button className="btn ghost" type="button" onClick={handleCopyPublicLink}>
+                      Copy link
+                    </button>
+                    <a className="btn ghost" href={publicLink} target="_blank" rel="noreferrer">
+                      Open public form
+                    </a>
+                  </div>
+                  {qrImageUrl ? (
+                    <img
+                      className="share-qr"
+                      src={qrImageUrl}
+                      alt="QR code for public disposable attendance check-in"
+                    />
+                  ) : null}
+                </div>
+              </details>
             </div>
 
             {!activeItem.isArchived ? (
