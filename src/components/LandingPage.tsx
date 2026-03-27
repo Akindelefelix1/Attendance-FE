@@ -658,7 +658,10 @@ const LandingPage = ({ page }: Props) => {
           <section className="landing-section">
             <div className="landing-section-header">
               <h2>Flexible plans for every stage</h2>
-              <p className="muted">No hidden fees. Cancel anytime.</p>
+              <p className="muted">
+                Includes event attendance and geo-fencing across all tiers. No hidden
+                fees. Cancel anytime.
+              </p>
             </div>
             <div className="plans">
               <div className="plan-card">
@@ -669,6 +672,14 @@ const LandingPage = ({ page }: Props) => {
                   <li>
                     <span className="plan-icon" aria-hidden="true" />
                     Daily sign-in and sign-out
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Geo-fencing for sign-in and sign-out
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Disposable event attendance (up to 3 events)
                   </li>
                   <li>
                     <span className="plan-icon" aria-hidden="true" />
@@ -698,7 +709,19 @@ const LandingPage = ({ page }: Props) => {
                 <ul>
                   <li>
                     <span className="plan-icon" aria-hidden="true" />
-                    Attendance history export (CSV)
+                    Geo-fencing for sign-in and sign-out
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Disposable event attendance (up to 10 events)
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Recurring disposable attendance events
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Event attendance export (CSV)
                   </li>
                   <li>
                     <span className="plan-icon" aria-hidden="true" />
@@ -732,6 +755,22 @@ const LandingPage = ({ page }: Props) => {
                   Advanced tools for large organizations and multi-location operations.
                 </p>
                 <ul>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Geo-fencing for sign-in and sign-out
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Disposable event attendance (unlimited events)
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Recurring disposable attendance events
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Event attendance export (CSV)
+                  </li>
                   <li>
                     <span className="plan-icon" aria-hidden="true" />
                     Multi-location dashboards
@@ -945,7 +984,8 @@ const LandingPage = ({ page }: Props) => {
                 <p className="muted">We can tailor a package for large teams.</p>
               </div>
               <p className="landing-lede">
-                Start free, then unlock advanced analytics and integrations.
+                Start free, then scale event attendance, exports, recurring schedules,
+                and geo-fenced sign-in/sign-out.
               </p>
             </div>
           </div>
@@ -957,6 +997,14 @@ const LandingPage = ({ page }: Props) => {
                   <li>
                     <span className="plan-icon" aria-hidden="true" />
                     Daily sign-in and sign-out
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Geo-fencing for sign-in and sign-out
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Disposable event attendance (up to 3 events)
                   </li>
                   <li>
                     <span className="plan-icon" aria-hidden="true" />
@@ -985,7 +1033,19 @@ const LandingPage = ({ page }: Props) => {
                 <ul>
                   <li>
                     <span className="plan-icon" aria-hidden="true" />
-                    Attendance history export (CSV)
+                    Geo-fencing for sign-in and sign-out
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Disposable event attendance (up to 10 events)
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Recurring disposable attendance events
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Event attendance export (CSV)
                   </li>
                   <li>
                     <span className="plan-icon" aria-hidden="true" />
@@ -1016,6 +1076,22 @@ const LandingPage = ({ page }: Props) => {
               <h3>Pro</h3>
               <p className="plan-price">NGN 120,000 / month</p>
                 <ul>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Geo-fencing for sign-in and sign-out
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Disposable event attendance (unlimited events)
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Recurring disposable attendance events
+                  </li>
+                  <li>
+                    <span className="plan-icon" aria-hidden="true" />
+                    Event attendance export (CSV)
+                  </li>
                   <li>
                     <span className="plan-icon" aria-hidden="true" />
                     Multi-location dashboards
