@@ -199,7 +199,6 @@ const App = () => {
   };
 
   const handleAddOrganization = async () => {
-    if (sessionOrgId) return;
     if (orgLimitReached) return;
     if (!newOrgName || !newOrgLocation) return;
     await runWithBusy("add-org", "Adding organization...", async () => {
@@ -433,7 +432,6 @@ const App = () => {
   };
 
   const handleAddOrgFromPage = async (name: string, location: string) => {
-    if (sessionOrgId) return;
     if (orgLimitReached) return;
     await runWithBusy("org-add", "Adding organization...", async () => {
       await createOrganization({ name, location });
@@ -493,7 +491,7 @@ const App = () => {
   const orgLimit =
     orgPlanTier === "pro" ? 10 : orgPlanTier === "plus" ? 3 : 1;
   const orgCount = organizations.length;
-  const orgLimitReached = !sessionOrgId && orgCount >= orgLimit;
+  const orgLimitReached = orgCount >= orgLimit;
   const staffLimit = selectedOrg
     ? selectedOrg.settings.planTier === "pro"
       ? Infinity
