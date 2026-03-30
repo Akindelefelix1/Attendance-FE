@@ -55,6 +55,7 @@ const App = () => {
   const [adminEmailInput, setAdminEmailInput] = useState("");
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [showAdminPasswordInput, setShowAdminPasswordInput] = useState(false);
+  const [isAdminAccessLoading, setIsAdminAccessLoading] = useState(false);
   const [adminSession, setAdminSession] = useState<{
     email: string;
     orgId: string;
@@ -378,9 +379,11 @@ const App = () => {
   };
 
   const handleAdminAccess = async () => {
+    if (isAdminAccessLoading) return;
     if (!adminEmailInput.trim() || !adminPasswordInput.trim()) {
       return;
     }
+    setIsAdminAccessLoading(true);
     try {
       const result = await loginAdmin({
         email: adminEmailInput.trim(),
@@ -396,6 +399,8 @@ const App = () => {
     } catch {
       setAdminPasswordInput("");
       setShowAdminPasswordInput(false);
+    } finally {
+      setIsAdminAccessLoading(false);
     }
   };
 
@@ -1182,6 +1187,7 @@ const App = () => {
                 value={adminEmailInput}
                 onChange={(event) => setAdminEmailInput(event.target.value)}
                 placeholder="Admin email"
+                disabled={isAdminAccessLoading}
               />
               <div className="auth-password-field">
                 <input
@@ -1189,18 +1195,37 @@ const App = () => {
                   value={adminPasswordInput}
                   onChange={(event) => setAdminPasswordInput(event.target.value)}
                   placeholder="Password"
+                  disabled={isAdminAccessLoading}
                 />
                 <button
                   className="auth-password-toggle"
                   type="button"
                   onClick={() => setShowAdminPasswordInput((prev) => !prev)}
                   aria-label={showAdminPasswordInput ? "Hide password" : "Show password"}
+                  disabled={isAdminAccessLoading}
                 >
                   {showAdminPasswordInput ? "Hide" : "Show"}
                 </button>
               </div>
-              <button className="btn solid" type="button" onClick={handleAdminAccess}>
-                Continue
+              <button
+                className="btn solid btn-inline-loader"
+                type="button"
+                onClick={handleAdminAccess}
+                disabled={
+                  isAdminAccessLoading ||
+                  !adminEmailInput.trim() ||
+                  !adminPasswordInput.trim()
+                }
+                aria-busy={isAdminAccessLoading}
+              >
+                {isAdminAccessLoading ? (
+                  <>
+                    <span className="spinner btn-spinner" aria-hidden="true" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  "Continue"
+                )}
               </button>
             </div>
             {adminEmailInput || adminPasswordInput ? (

@@ -2200,6 +2200,22 @@ input {
   box-shadow: 0 12px 25px rgba(255, 107, 53, 0.3);
 }
 
+.btn-inline-loader {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 140px;
+}
+
+.btn-spinner {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: rgba(255, 255, 255, 0.95);
+}
+
 .btn.ghost {
   background: var(--accent-soft);
   color: var(--ink);
