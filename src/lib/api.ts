@@ -18,6 +18,42 @@ const API_URL = envApiUrl && envApiUrl.length > 0
     ? "http://localhost:3000"
     : "";
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+const parseErrorMessage = (raw: string, fallback: string) => {
+  const trimmed = raw.trim();
+  if (!trimmed) return fallback;
+
+  try {
+    const parsed = JSON.parse(trimmed) as
+      | { message?: string | string[] }
+      | Array<{ message?: string | string[] }>;
+
+    if (Array.isArray(parsed)) {
+      const first = parsed[0]?.message;
+      if (Array.isArray(first)) return first.join(", ");
+      if (typeof first === "string" && first.trim().length > 0) return first;
+      return fallback;
+    }
+
+    const message = parsed.message;
+    if (Array.isArray(message)) return message.join(", ");
+    if (typeof message === "string" && message.trim().length > 0) return message;
+    return fallback;
+  } catch {
+    if (trimmed.length > 0) return trimmed;
+    return fallback;
+  }
+};
+
 type ApiOrganization = {
   id: string;
   name: string;
@@ -75,7 +111,8 @@ const request = async <T>(path: string, options?: RequestInit): Promise<T> => {
   });
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || `Request failed: ${response.status}`);
+    const fallback = `Request failed: ${response.status}`;
+    throw new ApiError(parseErrorMessage(text, fallback), response.status);
   }
   return response.json() as Promise<T>;
 };
@@ -287,6 +324,18 @@ export const requestStaffReset = (payload: { email: string }) =>
 
 export const resetStaffPassword = (payload: { token: string; password: string }) =>
   request<{ ok: boolean }>("/auth/staff/reset", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+export const requestAdminReset = (payload: { email: string }) =>
+  request<{ ok: boolean; token?: string }>("/auth/admin/request-reset", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+export const resetAdminPassword = (payload: { token: string; password: string }) =>
+  request<{ ok: boolean }>("/auth/admin/reset", {
     method: "POST",
     body: JSON.stringify(payload)
   });

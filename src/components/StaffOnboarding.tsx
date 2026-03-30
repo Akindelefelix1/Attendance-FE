@@ -2,12 +2,13 @@
 import type { StaffMember } from "../types";
 
 type Props = {
-  onAddStaff: (payload: Omit<StaffMember, "id">) => void;
+  onAddStaff: (payload: Omit<StaffMember, "id">) => Promise<boolean>;
   roles: string[];
   disabled?: boolean;
   limitReached?: boolean;
   limitLabel?: string;
   isLoading?: boolean;
+  errorMessage?: string;
 };
 
 const StaffOnboarding = ({
@@ -16,7 +17,8 @@ const StaffOnboarding = ({
   disabled = false,
   limitReached = false,
   limitLabel = "0",
-  isLoading = false
+  isLoading = false,
+  errorMessage = ""
 }: Props) => {
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState(roles[0] ?? "");
@@ -28,11 +30,13 @@ const StaffOnboarding = ({
     setEmail("");
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!fullName || !role || !email) return;
-    onAddStaff({ fullName, role, email });
-    reset();
+    const success = await onAddStaff({ fullName, role, email });
+    if (success) {
+      reset();
+    }
   };
 
   return (
@@ -46,6 +50,7 @@ const StaffOnboarding = ({
           Staff limit reached ({limitLabel}). Upgrade your plan to add more staff.
         </p>
       ) : null}
+      {errorMessage ? <p className="auth-error">{errorMessage}</p> : null}
       <label>
         Full name
         <input

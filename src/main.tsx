@@ -14,7 +14,9 @@ type NavPage =
   | "plans"
   | "login"
   | "signup"
-  | "verify-email";
+  | "verify-email"
+  | "admin-reset-password"
+  | "staff-reset-password";
 
 type LandingRouteProps = {
   page: NavPage;
@@ -41,6 +43,14 @@ createRoot(rootElement).render(
         <Route path="/login" element={<LandingRoute page="login" />} />
         <Route path="/signup" element={<LandingRoute page="signup" />} />
         <Route path="/verify-email" element={<LandingRoute page="verify-email" />} />
+        <Route
+          path="/admin-reset-password"
+          element={<LandingRoute page="admin-reset-password" />}
+        />
+        <Route
+          path="/staff-reset-password"
+          element={<LandingRoute page="staff-reset-password" />}
+        />
         <Route path="/app" element={<App />} />
         <Route path="/app/organizations" element={<App />} />
         <Route path="/app/analytics" element={<App />} />

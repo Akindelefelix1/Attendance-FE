@@ -1,11 +1,16 @@
 ﻿import { useMemo, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
+  ApiError,
   createOrganization,
   loginAdmin,
   loginStaff,
+  requestAdminReset,
   registerAdmin,
   requestAdminVerify,
+  requestStaffReset,
+  resetAdminPassword,
+  resetStaffPassword,
   verifyAdmin
 } from "../lib/api";
 
@@ -18,7 +23,9 @@ type Props = {
     | "plans"
     | "login"
     | "signup"
-    | "verify-email";
+    | "verify-email"
+    | "admin-reset-password"
+    | "staff-reset-password";
 };
 
 type FaqEntry = {
@@ -69,6 +76,16 @@ const LandingPage = ({ page }: Props) => {
   const [authError, setAuthError] = useState("");
   const [authNotice, setAuthNotice] = useState("");
   const [authBusy, setAuthBusy] = useState<"login" | "signup" | null>(null);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotBusy, setForgotBusy] = useState(false);
+  const [forgotError, setForgotError] = useState("");
+  const [forgotNotice, setForgotNotice] = useState("");
+  const [showForgotPanel, setShowForgotPanel] = useState(false);
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetPasswordConfirm, setResetPasswordConfirm] = useState("");
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetError, setResetError] = useState("");
+  const [resetNotice, setResetNotice] = useState("");
   const [verifyStatus, setVerifyStatus] = useState<"idle" | "verifying" | "success" | "error">(
     "idle"
   );
@@ -142,14 +159,35 @@ const LandingPage = ({ page }: Props) => {
           "Admin email is not verified yet. A new verification link has been sent."
         );
       } else {
-        setAuthError(
-          loginMode === "staff"
-            ? "Invalid staff email or password."
-            : "Invalid admin email or password."
-        );
+        setAuthError(errorMessage || "Incorrect email or password.");
       }
     } finally {
       setAuthBusy(null);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (forgotBusy) return;
+    setForgotError("");
+    setForgotNotice("");
+    if (!forgotEmail.trim()) {
+      setForgotError("Enter your email address.");
+      return;
+    }
+
+    setForgotBusy(true);
+    try {
+      const normalizedEmail = forgotEmail.trim().toLowerCase();
+      if (loginMode === "admin") {
+        await requestAdminReset({ email: normalizedEmail });
+      } else {
+        await requestStaffReset({ email: normalizedEmail });
+      }
+      setForgotNotice("If this email exists, a reset link has been sent.");
+    } catch (error) {
+      setForgotError(error instanceof Error ? error.message : "Could not send reset link.");
+    } finally {
+      setForgotBusy(false);
     }
   };
 
@@ -157,8 +195,10 @@ const LandingPage = ({ page }: Props) => {
     if (page === "login") return "Welcome back";
     if (page === "signup") return "Create organization";
     if (page === "verify-email") return "Verify email";
+    if (page === "admin-reset-password") return "Reset admin password";
+    if (page === "staff-reset-password") return "Reset staff password";
     return "";
-}, [page]);
+  }, [page]);
 
   const isBusy = authBusy !== null;
 
@@ -201,6 +241,14 @@ const LandingPage = ({ page }: Props) => {
         setVerifyMessage("Verification link is invalid or expired.");
       });
   }, [location.search, page]);
+
+  useEffect(() => {
+    if (page !== "admin-reset-password" && page !== "staff-reset-password") {
+      return;
+    }
+    setResetError("");
+    setResetNotice("");
+  }, [page]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -295,7 +343,11 @@ const LandingPage = ({ page }: Props) => {
         </div>
       </nav>
 
-      {page === "login" || page === "signup" || page === "verify-email" ? (
+      {page === "login" ||
+      page === "signup" ||
+      page === "verify-email" ||
+      page === "admin-reset-password" ||
+      page === "staff-reset-password" ? (
         <section className="auth-page">
           <div className="auth-card">
             <h1>{authPageTitle}</h1>
@@ -304,7 +356,9 @@ const LandingPage = ({ page }: Props) => {
                 ? "Access your organization attendance dashboard."
                 : page === "signup"
                   ? "Register your organization to get started."
-                  : "Confirm your admin email to activate your account."}
+                  : page === "verify-email"
+                    ? "Confirm your admin email to activate your account."
+                    : "Set a new password to regain account access."}
             </p>
             {authError ? <p className="auth-error">{authError}</p> : null}
             {authNotice ? <p className="auth-notice">{authNotice}</p> : null}
@@ -354,7 +408,7 @@ const LandingPage = ({ page }: Props) => {
                 </label>
                 {loginMode === "staff" ? (
                   <p className="muted">
-                    Use your organization staff email and the shared staff password set by admin.
+                    Use your organization staff email and your personal password.
                   </p>
                 ) : null}
                 <button
@@ -365,6 +419,44 @@ const LandingPage = ({ page }: Props) => {
                 >
                   {authBusy === "login" ? "Logging in..." : `Log in as ${loginMode}`}
                 </button>
+                <button
+                  className="btn ghost"
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPanel((prev) => !prev);
+                    setForgotError("");
+                    setForgotNotice("");
+                    if (!forgotEmail) {
+                      setForgotEmail(loginEmail.trim().toLowerCase());
+                    }
+                  }}
+                  disabled={isBusy}
+                >
+                  {showForgotPanel ? "Hide forgot password" : "Forgot password?"}
+                </button>
+                {showForgotPanel ? (
+                  <div className="auth-form">
+                    <label>
+                      Reset email
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(event) => setForgotEmail(event.target.value)}
+                        disabled={forgotBusy || isBusy}
+                      />
+                    </label>
+                    {forgotError ? <p className="auth-error">{forgotError}</p> : null}
+                    {forgotNotice ? <p className="auth-notice">{forgotNotice}</p> : null}
+                    <button
+                      className="btn solid"
+                      type="button"
+                      onClick={handleForgotPassword}
+                      disabled={forgotBusy || isBusy}
+                    >
+                      {forgotBusy ? "Sending link..." : `Send ${loginMode} reset link`}
+                    </button>
+                  </div>
+                ) : null}
                 <button
                   className="btn ghost"
                   type="button"
@@ -440,7 +532,7 @@ const LandingPage = ({ page }: Props) => {
                   Already have an account
                 </button>
               </div>
-            ) : (
+            ) : page === "verify-email" ? (
               <div className="auth-form">
                 {verifyStatus === "verifying" ? (
                   <p className="muted">Verifying your email...</p>
@@ -455,6 +547,83 @@ const LandingPage = ({ page }: Props) => {
                   Continue to app
                 </button>
                 <button className="btn ghost" type="button" onClick={() => navigate("/login")}>
+                  Back to login
+                </button>
+              </div>
+            ) : (
+              <div className="auth-form">
+                <p className="muted">
+                  {page === "admin-reset-password"
+                    ? "Set a new password for your admin account."
+                    : "Set a new password for your staff account."}
+                </p>
+                <label>
+                  New password
+                  <input
+                    type="password"
+                    value={resetPassword}
+                    onChange={(event) => setResetPassword(event.target.value)}
+                    disabled={resetBusy}
+                  />
+                </label>
+                <label>
+                  Confirm password
+                  <input
+                    type="password"
+                    value={resetPasswordConfirm}
+                    onChange={(event) => setResetPasswordConfirm(event.target.value)}
+                    disabled={resetBusy}
+                  />
+                </label>
+                {resetError ? <p className="auth-error">{resetError}</p> : null}
+                {resetNotice ? <p className="auth-notice">{resetNotice}</p> : null}
+                <button
+                  className="btn solid"
+                  type="button"
+                  onClick={async () => {
+                    if (resetBusy) return;
+                    setResetError("");
+                    setResetNotice("");
+
+                    const token = new URLSearchParams(location.search).get("token")?.trim();
+                    if (!token) {
+                      setResetError("Reset token is missing from this link.");
+                      return;
+                    }
+                    if (!resetPassword || resetPassword.length < 6) {
+                      setResetError("Password must be at least 6 characters.");
+                      return;
+                    }
+                    if (resetPassword !== resetPasswordConfirm) {
+                      setResetError("Passwords do not match.");
+                      return;
+                    }
+
+                    setResetBusy(true);
+                    try {
+                      if (page === "admin-reset-password") {
+                        await resetAdminPassword({ token, password: resetPassword });
+                      } else {
+                        await resetStaffPassword({ token, password: resetPassword });
+                      }
+                      setResetNotice("Password reset successful. You can now log in.");
+                      setResetPassword("");
+                      setResetPasswordConfirm("");
+                    } catch (error) {
+                      const message =
+                        error instanceof ApiError || error instanceof Error
+                          ? error.message
+                          : "Could not reset password.";
+                      setResetError(message);
+                    } finally {
+                      setResetBusy(false);
+                    }
+                  }}
+                  disabled={resetBusy}
+                >
+                  {resetBusy ? "Resetting..." : "Reset password"}
+                </button>
+                <button className="btn ghost" type="button" onClick={() => navigate("/login")}> 
                   Back to login
                 </button>
               </div>

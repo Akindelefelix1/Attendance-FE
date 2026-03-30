@@ -2,6 +2,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import type { AttendanceRecord, OrgSettings, Organization, StaffMember } from "./types";
 import {
+  ApiError,
   addStaff,
   createOrganization,
   deleteOrganization,
@@ -76,6 +77,8 @@ const App = () => {
   const [mobileTopbarOpen, setMobileTopbarOpen] = useState(false);
   const [showOnboardModal, setShowOnboardModal] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [adminGateError, setAdminGateError] = useState("");
+  const [onboardError, setOnboardError] = useState("");
 
   const todayISO = getTodayISO();
   const [selectedDateISO, setSelectedDateISO] = useState(todayISO);
@@ -240,20 +243,31 @@ const App = () => {
   };
 
   const handleAddStaff = async (payload: Omit<StaffMember, "id">) => {
-    if (!selectedOrg) return;
-    if (staffLimitReached) return;
-    await runWithBusy("add-staff", "Adding staff member...", async () => {
-      await addStaff({
-        organizationId: selectedOrg.id,
-        fullName: payload.fullName,
-        role: payload.role,
-        email: payload.email
+    if (!selectedOrg) return false;
+    if (staffLimitReached) return false;
+    setOnboardError("");
+    try {
+      await runWithBusy("add-staff", "Adding staff member...", async () => {
+        await addStaff({
+          organizationId: selectedOrg.id,
+          fullName: payload.fullName,
+          role: payload.role,
+          email: payload.email
+        });
+        const refreshed = await getOrganization(selectedOrg.id);
+        setOrganizations((prev) =>
+          prev.map((org) => (org.id === refreshed.id ? refreshed : org))
+        );
       });
-      const refreshed = await getOrganization(selectedOrg.id);
-      setOrganizations((prev) =>
-        prev.map((org) => (org.id === refreshed.id ? refreshed : org))
-      );
-    });
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof ApiError || error instanceof Error
+          ? error.message
+          : "Could not add staff member.";
+      setOnboardError(message);
+      return false;
+    }
   };
 
   const handleUpdateSettings = async (settings: OrgSettings) => {
@@ -383,6 +397,7 @@ const App = () => {
     if (!adminEmailInput.trim() || !adminPasswordInput.trim()) {
       return;
     }
+    setAdminGateError("");
     setIsAdminAccessLoading(true);
     try {
       const result = await loginAdmin({
@@ -396,7 +411,12 @@ const App = () => {
       setShowAdminGate(false);
       setAdminPasswordInput("");
       setShowAdminPasswordInput(false);
-    } catch {
+    } catch (error) {
+      const message =
+        error instanceof ApiError || error instanceof Error
+          ? error.message
+          : "Incorrect email or password.";
+      setAdminGateError(message || "Incorrect email or password.");
       setAdminPasswordInput("");
       setShowAdminPasswordInput(false);
     } finally {
@@ -414,11 +434,15 @@ const App = () => {
     setShowAdminGate(false);
     setAdminEmailInput("");
     setAdminPasswordInput("");
+    setAdminGateError("");
     setShowAdminPasswordInput(false);
   };
 
   const handleOpenOnboard = () => setShowOnboardModal(true);
-  const handleCloseOnboard = () => setShowOnboardModal(false);
+  const handleCloseOnboard = () => {
+    setShowOnboardModal(false);
+    setOnboardError("");
+  };
 
   const handleBackToLanding = () => {
     navigate("/login", { replace: true });
@@ -1231,6 +1255,7 @@ const App = () => {
             {adminEmailInput || adminPasswordInput ? (
               <p className="muted">Use your admin credentials to continue.</p>
             ) : null}
+            {adminGateError ? <p className="auth-error">{adminGateError}</p> : null}
             <div className="modal-actions">
               <button className="btn ghost" type="button" onClick={handleCloseAdminGate}>
                 Cancel
@@ -1253,6 +1278,7 @@ const App = () => {
               limitReached={staffLimitReached}
               limitLabel={staffLimit === Infinity ? "Unlimited" : String(staffLimit)}
               isLoading={busyAction?.id === "add-staff"}
+              errorMessage={onboardError}
             />
             <div className="modal-actions">
               <button className="btn ghost" type="button" onClick={handleCloseOnboard}>
