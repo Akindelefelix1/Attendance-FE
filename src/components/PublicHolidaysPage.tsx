@@ -420,37 +420,51 @@ const PublicHolidaysPage = ({ organization }: Props) => {
       {notifyModal && (
         <div className="modal-backdrop" onClick={() => !notifying && setNotifyModal(null)}>
           <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
-            <h3>Notify Staff About Holiday</h3>
-            <p>Send notification about "{holidays.find((h) => h.id === notifyModal)?.name}" to all registered staff</p>
-            
-            <div className="form-section" style={{ marginTop: "1rem", padding: 0, background: "transparent" }}>
-              <label className="checkbox-label">
-                <input
-                  type="radio"
-                  name="sendMode"
-                  value="instant"
-                  checked={sendMode === "instant"}
-                  onChange={() => setSendMode("instant")}
-                  disabled={notifying}
-                />
-                Send Instantly
-              </label>
-              
-              <label className="checkbox-label">
-                <input
-                  type="radio"
-                  name="sendMode"
-                  value="scheduled"
-                  checked={sendMode === "scheduled"}
-                  onChange={() => setSendMode("scheduled")}
-                  disabled={notifying}
-                />
-                Schedule for Later
+            <div className="modal-header">
+              <h3>Notify Staff About Holiday</h3>
+              <p className="modal-subtitle">Send notification about "<strong>{holidays.find((h) => h.id === notifyModal)?.name}</strong>" to all registered staff</p>
+            </div>
+
+            <div className="notify-options">
+              <label className="notify-option-card">
+                <div className="notify-option-input">
+                  <input
+                    type="radio"
+                    name="sendMode"
+                    value="instant"
+                    checked={sendMode === "instant"}
+                    onChange={() => setSendMode("instant")}
+                    disabled={notifying}
+                  />
+                </div>
+                <div className="notify-option-content">
+                  <div className="notify-option-title">Send Instantly</div>
+                  <div className="notify-option-desc">Notify all staff right away</div>
+                </div>
               </label>
 
-              {sendMode === "scheduled" && (
-                <label style={{ marginTop: "0.75rem" }}>
-                  Date & Time
+              <label className="notify-option-card">
+                <div className="notify-option-input">
+                  <input
+                    type="radio"
+                    name="sendMode"
+                    value="scheduled"
+                    checked={sendMode === "scheduled"}
+                    onChange={() => setSendMode("scheduled")}
+                    disabled={notifying}
+                  />
+                </div>
+                <div className="notify-option-content">
+                  <div className="notify-option-title">Schedule for Later</div>
+                  <div className="notify-option-desc">Send notification at a specific time</div>
+                </div>
+              </label>
+            </div>
+
+            {sendMode === "scheduled" && (
+              <div className="scheduled-input-wrapper">
+                <label className="modal-label">
+                  <span className="label-text">Date & Time</span>
                   <input
                     type="datetime-local"
                     value={scheduledAt}
@@ -459,8 +473,8 @@ const PublicHolidaysPage = ({ organization }: Props) => {
                     required={sendMode === "scheduled"}
                   />
                 </label>
-              )}
-            </div>
+              </div>
+            )}
 
             {error && <div className="error-message">{error}</div>}
 
