@@ -88,6 +88,8 @@ type EditableCustomField = {
   label: string;
 };
 
+type ResponseFilter = "all" | "preregistered" | "checked-in";
+
 const standardFieldIds = new Set(["full-name", "email", "phone", "occupation", "address"]);
 
 const DisposableAttendancePage = ({ organization }: Props) => {
@@ -95,6 +97,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [selectedId, setSelectedId] = useState<string>("");
   const [responses, setResponses] = useState<DisposableAttendanceResponse[]>([]);
   const [responseColumns, setResponseColumns] = useState<Array<{ key: string; label: string }>>([]);
+  const [responseFilter, setResponseFilter] = useState<ResponseFilter>("all");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -139,6 +142,34 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     () => items.find((item) => item.id === selectedId) ?? null,
     [items, selectedId]
   );
+
+  const responseSummary = useMemo(() => {
+    let preRegistered = 0;
+    let checkedIn = 0;
+
+    for (const response of responses) {
+      if (response.status === "checked-in") {
+        checkedIn += 1;
+      } else if (response.status === "preregistered") {
+        preRegistered += 1;
+      }
+    }
+
+    const total = responses.length;
+    const attendanceRate = total > 0 ? Math.round((checkedIn / total) * 100) : 0;
+
+    return {
+      total,
+      preRegistered,
+      checkedIn,
+      attendanceRate
+    };
+  }, [responses]);
+
+  const filteredResponses = useMemo(() => {
+    if (responseFilter === "all") return responses;
+    return responses.filter((response) => response.status === responseFilter);
+  }, [responses, responseFilter]);
 
   const planTier = organization?.settings.planTier ?? "free";
   const limit = tierLimits[planTier];
@@ -216,6 +247,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     if (!selectedId) {
       setResponses([]);
       setResponseColumns([]);
+      setResponseFilter("all");
       return;
     }
     void reloadResponses(selectedId);
@@ -527,6 +559,26 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     downloadCsv(filename, csv);
   };
 
+  const handleExportFiltered = () => {
+    if (!activeItem) return;
+    const headers = ["Submitted at", ...activeItem.fields.map((field) => field.label)];
+    const rows = filteredResponses.map((response) => [
+      response.submittedAtISO,
+      ...activeItem.fields.map((field) => response.values[field.id] ?? "")
+    ]);
+    const csv = [headers, ...rows]
+      .map((row) =>
+        row
+          .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
+          .join(",")
+      )
+      .join("\n");
+
+    const filterSuffix = responseFilter === "all" ? "all" : responseFilter;
+    const filename = `${organization?.name ?? "org"}-${toSlug(activeItem.title)}-disposable-attendance-${filterSuffix}.csv`;
+    downloadCsv(filename, csv);
+  };
+
   const handleCopyPublicLink = async () => {
     if (!publicLink) return;
     try {
@@ -623,6 +675,14 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                   Export CSV
                 </button>
                 <button
+                  className="btn ghost"
+                  type="button"
+                  onClick={handleExportFiltered}
+                  disabled={responses.length === 0 || filteredResponses.length === 0}
+                >
+                  Export filtered CSV
+                </button>
+                <button
                   className="btn ghost danger"
                   type="button"
                   onClick={handleDeleteActive}
@@ -640,6 +700,28 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                 <span className="pill">{recurrenceLabel(activeItem)}</span>
                 {activeItem.allowPreRegister ? <span className="pill">Pre-register enabled</span> : null}
                 <span className="pill">{responses.length} responses</span>
+              </div>
+            </div>
+
+            <div className="disposable-block">
+              <h4>Attendance summary</h4>
+              <div className="disposable-summary-grid">
+                <div className="disposable-summary-card">
+                  <span className="label">Total responses</span>
+                  <strong>{responseSummary.total}</strong>
+                </div>
+                <div className="disposable-summary-card preregistered">
+                  <span className="label">Pre-registered</span>
+                  <strong>{responseSummary.preRegistered}</strong>
+                </div>
+                <div className="disposable-summary-card checked-in">
+                  <span className="label">Checked in</span>
+                  <strong>{responseSummary.checkedIn}</strong>
+                </div>
+                <div className="disposable-summary-card rate">
+                  <span className="label">Check-in rate</span>
+                  <strong>{responseSummary.attendanceRate}%</strong>
+                </div>
               </div>
             </div>
 
@@ -811,50 +893,80 @@ const DisposableAttendancePage = ({ organization }: Props) => {
               {responses.length === 0 ? (
                 <p className="muted">No responses yet.</p>
               ) : (
-                <div className="disposable-table-wrap">
-                  <table className="disposable-table">
-                    <thead>
-                      <tr>
-                        {responseColumns.map((column) => (
-                          <th key={column.key}>{column.label}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {responses.map((response) => (
-                        <tr key={response.id}>
-                          {responseColumns.map((column) => {
-                            if (column.key === "submittedAtISO") {
-                              return <td key={`${response.id}-${column.key}`}>{formatDateLong(response.submittedAtISO.slice(0, 10))}</td>;
-                            }
-                            if (column.key === "status") {
-                              const statusValue = response.status === "checked-in" ? "Checked in" : "Pre-registered";
-                              return (
-                                <td key={`${response.id}-${column.key}`}>
-                                  <span
-                                    className={`disposable-status ${response.status === "checked-in" ? "checked-in" : "preregistered"}`}
-                                  >
-                                    {statusValue}
-                                  </span>
-                                </td>
-                              );
-                            }
-                            if (column.key === "checkedInAtISO") {
-                              return (
-                                <td key={`${response.id}-${column.key}`}>
-                                  {response.checkedInAtISO
-                                    ? new Date(response.checkedInAtISO).toLocaleString()
-                                    : "-"}
-                                </td>
-                              );
-                            }
-                            return <td key={`${response.id}-${column.key}`}>{response.values[column.key] || "—"}</td>;
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <>
+                  <div className="disposable-filters">
+                    <button
+                      type="button"
+                      className={`filter-pill ${responseFilter === "all" ? "active" : ""}`}
+                      onClick={() => setResponseFilter("all")}
+                    >
+                      All ({responses.length})
+                    </button>
+                    <button
+                      type="button"
+                      className={`filter-pill ${responseFilter === "preregistered" ? "active" : ""}`}
+                      onClick={() => setResponseFilter("preregistered")}
+                    >
+                      Pre-registered ({responseSummary.preRegistered})
+                    </button>
+                    <button
+                      type="button"
+                      className={`filter-pill ${responseFilter === "checked-in" ? "active" : ""}`}
+                      onClick={() => setResponseFilter("checked-in")}
+                    >
+                      Checked in ({responseSummary.checkedIn})
+                    </button>
+                  </div>
+
+                  {filteredResponses.length === 0 ? (
+                    <p className="muted">No responses for this filter.</p>
+                  ) : (
+                    <div className="disposable-table-wrap">
+                      <table className="disposable-table">
+                        <thead>
+                          <tr>
+                            {responseColumns.map((column) => (
+                              <th key={column.key}>{column.label}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredResponses.map((response) => (
+                            <tr key={response.id}>
+                              {responseColumns.map((column) => {
+                                if (column.key === "submittedAtISO") {
+                                  return <td key={`${response.id}-${column.key}`}>{formatDateLong(response.submittedAtISO.slice(0, 10))}</td>;
+                                }
+                                if (column.key === "status") {
+                                  const statusValue = response.status === "checked-in" ? "Checked in" : "Pre-registered";
+                                  return (
+                                    <td key={`${response.id}-${column.key}`}>
+                                      <span
+                                        className={`disposable-status ${response.status === "checked-in" ? "checked-in" : "preregistered"}`}
+                                      >
+                                        {statusValue}
+                                      </span>
+                                    </td>
+                                  );
+                                }
+                                if (column.key === "checkedInAtISO") {
+                                  return (
+                                    <td key={`${response.id}-${column.key}`}>
+                                      {response.checkedInAtISO
+                                        ? new Date(response.checkedInAtISO).toLocaleString()
+                                        : "-"}
+                                    </td>
+                                  );
+                                }
+                                return <td key={`${response.id}-${column.key}`}>{response.values[column.key] || "—"}</td>;
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </>

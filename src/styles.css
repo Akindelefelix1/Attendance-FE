@@ -1636,6 +1636,12 @@ input {
   gap: 0.65rem;
 }
 
+.disposable-filters {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 .disposable-select-row {
   display: grid;
   gap: 0.35rem;
@@ -1708,6 +1714,47 @@ input {
 
 .disposable-table tbody tr:last-child td {
   border-bottom: 0;
+}
+
+.disposable-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 0.65rem;
+}
+
+.disposable-summary-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.65rem 0.7rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.disposable-summary-card .label {
+  font-size: 0.77rem;
+  color: var(--muted);
+}
+
+.disposable-summary-card strong {
+  font-size: 1.18rem;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.disposable-summary-card.preregistered {
+  background: #fff7f0;
+  border-color: #f0c7ae;
+}
+
+.disposable-summary-card.checked-in {
+  background: #eefaf4;
+  border-color: #bfe4d0;
+}
+
+.disposable-summary-card.rate {
+  background: #eff7fb;
+  border-color: #bddae6;
 }
 
 .disposable-status {
@@ -3377,5 +3424,9 @@ input {
   .holidays-table td,
   .holidays-table th {
     padding: 0.6rem 0.5rem;
+  }
+
+  .disposable-summary-grid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
   }
 }
