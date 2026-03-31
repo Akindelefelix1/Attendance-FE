@@ -32,7 +32,13 @@ const PublicHolidaysPage = ({ organization }: Props) => {
   const [submitting, setSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
+  // Debug log
   useEffect(() => {
+    console.log('PublicHolidaysPage mounted with organization:', organization);
+  }, []);
+
+  useEffect(() => {
+    console.log('Organization changed:', organization);
     if (organization) {
       loadHolidays();
     }
@@ -43,10 +49,13 @@ const PublicHolidaysPage = ({ organization }: Props) => {
     setLoading(true);
     setError("");
     try {
+      console.log('Fetching holidays for org:', organization.id);
       const data = await listPublicHolidays(organization.id);
+      console.log('Holidays loaded:', data);
       setHolidays(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load holidays";
+      console.error('Error loading holidays:', err);
       setError(message);
     } finally {
       setLoading(false);
@@ -146,6 +155,12 @@ const PublicHolidaysPage = ({ organization }: Props) => {
   if (!organization) {
     return (
       <main className="layout full">
+        <div className="panel settings-header">
+          <div>
+            <h2>Public Holidays</h2>
+            <p className="muted">Manage public holidays for your organization.</p>
+          </div>
+        </div>
         <div className="empty-state">
           <h3>No organization selected</h3>
           <p>Please select an organization to manage public holidays.</p>
@@ -175,7 +190,11 @@ const PublicHolidaysPage = ({ organization }: Props) => {
         </div>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <div style={{ padding: '12px', backgroundColor: '#fee', color: '#c00', borderRadius: '4px', margin: '16px 0', border: '1px solid #f99' }}>
+          <strong>Error:</strong> {error}
+        </div>
+      )}
 
       {formMode !== null && (
         <div className="panel form-section">
@@ -282,11 +301,11 @@ const PublicHolidaysPage = ({ organization }: Props) => {
       )}
 
       {loading ? (
-        <div className="empty-state">
-          <p>Loading holidays...</p>
+        <div className="panel" style={{ padding: '32px', textAlign: 'center', color: '#666' }}>
+          <p>⏳ Loading holidays...</p>
         </div>
       ) : holidays.length === 0 ? (
-        <div className="empty-state">
+        <div className="panel" style={{ padding: '32px', textAlign: 'center', color: '#666' }}>
           <h3>No public holidays yet</h3>
           <p>Click "Add Holiday" to create your first public holiday.</p>
         </div>
