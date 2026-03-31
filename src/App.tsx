@@ -391,6 +391,10 @@ const App = () => {
 
   const handleSwitchToAdmin = () => {
     setMobileTopbarOpen(false);
+    // Pre-fill email field with logged-in admin email
+    if (adminSession?.email) {
+      setAdminEmailInput(adminSession.email);
+    }
     setShowAdminGate(true);
   };
 
