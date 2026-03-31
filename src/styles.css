@@ -3080,15 +3080,16 @@ input {
 /* Public Holidays Page Styles */
 .form-section {
   margin: 1rem 0;
-  padding: 1.25rem;
+  padding: 1.35rem;
   border: 1px solid var(--border);
-  border-radius: 16px;
-  background: #fffdf9;
-  box-shadow: 0 8px 20px rgba(26, 26, 26, 0.05);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fffefb 0%, #fffaf3 100%);
+  box-shadow: 0 10px 24px rgba(26, 26, 26, 0.06);
 }
 
 .form-section h3 {
   margin-bottom: 1rem;
+  color: var(--ink);
 }
 
 .holiday-form {
@@ -3106,10 +3107,18 @@ input {
 .holiday-form textarea {
   padding: 0.65rem 0.85rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 0.95rem;
   background: #fff;
   color: var(--ink);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.holiday-form input:focus,
+.holiday-form textarea:focus {
+  border-color: rgba(255, 107, 53, 0.55);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.18);
+  outline: none;
 }
 
 .holiday-form input:disabled,
@@ -3170,8 +3179,9 @@ input {
   width: 100%;
   overflow-x: auto;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 16px;
   background: #fff;
+  box-shadow: 0 10px 24px rgba(26, 26, 26, 0.06);
 }
 
 .holidays-scroll {
@@ -3208,6 +3218,10 @@ input {
   background: #fffaf3;
 }
 
+.holidays-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 .holiday-name {
   font-weight: 600;
   color: var(--ink);
@@ -3229,6 +3243,26 @@ input {
   text-align: center;
   display: inline-block;
   width: fit-content;
+}
+
+.holiday-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.62rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.holiday-type-badge.recurring {
+  background: var(--sea-soft);
+  color: var(--sea);
+}
+
+.holiday-type-badge.one-time {
+  background: var(--accent-soft);
+  color: #8a3a22;
 }
 
 .holiday-description {
