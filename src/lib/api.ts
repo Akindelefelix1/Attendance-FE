@@ -463,3 +463,16 @@ export const deletePublicHoliday = (orgId: string, id: string): Promise<void> =>
   request(`/organizations/${orgId}/public-holidays/${id}`, {
     method: "DELETE"
   });
+
+export const notifyStaffAboutHoliday = (
+  orgId: string,
+  holidayId: string,
+  payload: {
+    sendMode: "instant" | "scheduled";
+    scheduledAt?: string;
+  }
+): Promise<{ message: string }> =>
+  request<{ message: string }>(`/organizations/${orgId}/public-holidays/${holidayId}/notify`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });

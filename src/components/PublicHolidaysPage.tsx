@@ -4,7 +4,8 @@ import {
   listPublicHolidays,
   createPublicHoliday,
   updatePublicHoliday,
-  deletePublicHoliday
+  deletePublicHoliday,
+  notifyStaffAboutHoliday
 } from "../lib/api";
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
 };
 
 type FormMode = "add" | "edit";
+type SendMode = "instant" | "scheduled";
 
 const PublicHolidaysPage = ({ organization }: Props) => {
   const [holidays, setHolidays] = useState<PublicHoliday[]>([]);
@@ -31,6 +33,10 @@ const PublicHolidaysPage = ({ organization }: Props) => {
 
   const [submitting, setSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [notifyModal, setNotifyModal] = useState<string | null>(null);
+  const [sendMode, setSendMode] = useState<SendMode>("instant");
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [notifying, setNotifying] = useState(false);
 
   useEffect(() => {
     if (organization) {
@@ -140,6 +146,33 @@ const PublicHolidaysPage = ({ organization }: Props) => {
       setError(message);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleNotifyStaff = async (holidayId: string) => {
+    if (!organization) return;
+
+    setNotifying(true);
+    setError("");
+
+    try {
+      const payload = {
+        sendMode,
+        ...(sendMode === "scheduled" && { scheduledAt })
+      };
+      await notifyStaffAboutHoliday(organization.id, holidayId, payload);
+      setError("");
+      // Show success message
+      setTimeout(() => {
+        setNotifyModal(null);
+        setSendMode("instant");
+        setScheduledAt("");
+      }, 500);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to notify staff";
+      setError(message);
+    } finally {
+      setNotifying(false);
     }
   };
 
@@ -326,45 +359,127 @@ const PublicHolidaysPage = ({ organization }: Props) => {
                       <button
                         className="action-button"
                         onClick={() => handleEditClick(holiday)}
-                        disabled={submitting || deleteConfirm !== null}
+                        disabled={submitting || deleteConfirm !== null || notifyModal !== null}
                         title="Edit"
                       >
                         ✎
                       </button>
                       <button
+                        className="action-button"
+                        onClick={() => setNotifyModal(holiday.id)}
+                        disabled={submitting || deleteConfirm !== null || notifyModal !== null}
+                        title="Notify Staff"
+                      >
+                        ✉
+                      </button>
+                      <button
                         className="action-button danger"
                         onClick={() => setDeleteConfirm(holiday.id)}
-                        disabled={submitting}
+                        disabled={submitting || notifyModal !== null}
                         title="Delete"
                       >
                         ✕
                       </button>
-                      {deleteConfirm === holiday.id && (
-                        <div className="delete-confirm">
-                          <p>Delete "{holiday.name}"?</p>
-                          <div className="confirm-actions">
-                            <button
-                              className="btn small danger"
-                              onClick={() => handleDelete(holiday.id)}
-                              disabled={submitting}
-                            >
-                              {submitting ? "..." : "Yes"}
-                            </button>
-                            <button
-                              className="btn small ghost"
-                              onClick={() => setDeleteConfirm(null)}
-                              disabled={submitting}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="modal-backdrop" onClick={() => !submitting && setDeleteConfirm(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete Holiday</h3>
+            <p>Are you sure you want to delete "{holidays.find((h) => h.id === deleteConfirm)?.name}"?</p>
+            <p style={{ fontSize: "0.85rem", color: "var(--muted)" }}>This action cannot be undone.</p>
+            <div className="modal-actions">
+              <button
+                className="btn ghost"
+                onClick={() => setDeleteConfirm(null)}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn solid danger"
+                onClick={() => handleDelete(deleteConfirm)}
+                disabled={submitting}
+              >
+                {submitting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notify Staff Modal */}
+      {notifyModal && (
+        <div className="modal-backdrop" onClick={() => !notifying && setNotifyModal(null)}>
+          <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
+            <h3>Notify Staff About Holiday</h3>
+            <p>Send notification about "{holidays.find((h) => h.id === notifyModal)?.name}" to all registered staff</p>
+            
+            <div className="form-section" style={{ marginTop: "1rem", padding: 0, background: "transparent" }}>
+              <label className="checkbox-label">
+                <input
+                  type="radio"
+                  name="sendMode"
+                  value="instant"
+                  checked={sendMode === "instant"}
+                  onChange={() => setSendMode("instant")}
+                  disabled={notifying}
+                />
+                Send Instantly
+              </label>
+              
+              <label className="checkbox-label">
+                <input
+                  type="radio"
+                  name="sendMode"
+                  value="scheduled"
+                  checked={sendMode === "scheduled"}
+                  onChange={() => setSendMode("scheduled")}
+                  disabled={notifying}
+                />
+                Schedule for Later
+              </label>
+
+              {sendMode === "scheduled" && (
+                <label style={{ marginTop: "0.75rem" }}>
+                  Date & Time
+                  <input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    onChange={(e) => setScheduledAt(e.target.value)}
+                    disabled={notifying}
+                    required={sendMode === "scheduled"}
+                  />
+                </label>
+              )}
+            </div>
+
+            {error && <div className="error-message">{error}</div>}
+
+            <div className="modal-actions">
+              <button
+                className="btn ghost"
+                onClick={() => setNotifyModal(null)}
+                disabled={notifying}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn solid"
+                onClick={() => handleNotifyStaff(notifyModal)}
+                disabled={notifying || (sendMode === "scheduled" && !scheduledAt)}
+              >
+                {notifying ? "Sending..." : "Send Email"}
+              </button>
+            </div>
           </div>
         </div>
       )}
