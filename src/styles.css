@@ -1710,6 +1710,28 @@ input {
   border-bottom: 0;
 }
 
+.disposable-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.disposable-status.preregistered {
+  background: #fff1e7;
+  color: #a84a24;
+  border: 1px solid #f2c3a8;
+}
+
+.disposable-status.checked-in {
+  background: #e8f8f0;
+  color: #1f7a55;
+  border: 1px solid #b7e5cf;
+}
+
 .share-block {
   align-items: start;
 }

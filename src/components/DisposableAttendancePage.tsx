@@ -112,6 +112,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [recurrenceMode, setRecurrenceMode] = useState<DisposableAttendance["recurrenceMode"]>("none");
   const [recurrenceEndDateISO, setRecurrenceEndDateISO] = useState<string>("");
   const [recurrenceCustomRule, setRecurrenceCustomRule] = useState("");
+  const [allowPreRegister, setAllowPreRegister] = useState(false);
   const [createError, setCreateError] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -191,6 +192,9 @@ const DisposableAttendancePage = ({ organization }: Props) => {
           id: row.id,
           attendanceId,
           source: row.source,
+          status: row.status,
+          preRegisteredAtISO: row.preRegisteredAtISO,
+          checkedInAtISO: row.checkedInAtISO,
           submittedAtISO: row.submittedAtISO,
           values: row.values
         }))
@@ -357,7 +361,8 @@ const DisposableAttendancePage = ({ organization }: Props) => {
         recurrenceMode: normalizedRecurring,
         recurrenceEndDateISO: normalizedEndDate,
         recurrenceCustomRule:
-          isRecurring && recurrenceMode === "custom" ? recurrenceCustomRule.trim() : ""
+          isRecurring && recurrenceMode === "custom" ? recurrenceCustomRule.trim() : "",
+        allowPreRegister
       });
 
       setTitle("");
@@ -370,6 +375,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       setRecurrenceMode("none");
       setRecurrenceEndDateISO("");
       setRecurrenceCustomRule("");
+      setAllowPreRegister(false);
       setIsCreateModalOpen(false);
       showToast("success", "Disposable attendance created.");
 
@@ -632,6 +638,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
               <div className="pill-row">
                 <span className="pill">{activeItem.location || "No location"}</span>
                 <span className="pill">{recurrenceLabel(activeItem)}</span>
+                {activeItem.allowPreRegister ? <span className="pill">Pre-register enabled</span> : null}
                 <span className="pill">{responses.length} responses</span>
               </div>
             </div>
@@ -820,6 +827,27 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                             if (column.key === "submittedAtISO") {
                               return <td key={`${response.id}-${column.key}`}>{formatDateLong(response.submittedAtISO.slice(0, 10))}</td>;
                             }
+                            if (column.key === "status") {
+                              const statusValue = response.status === "checked-in" ? "Checked in" : "Pre-registered";
+                              return (
+                                <td key={`${response.id}-${column.key}`}>
+                                  <span
+                                    className={`disposable-status ${response.status === "checked-in" ? "checked-in" : "preregistered"}`}
+                                  >
+                                    {statusValue}
+                                  </span>
+                                </td>
+                              );
+                            }
+                            if (column.key === "checkedInAtISO") {
+                              return (
+                                <td key={`${response.id}-${column.key}`}>
+                                  {response.checkedInAtISO
+                                    ? new Date(response.checkedInAtISO).toLocaleString()
+                                    : "-"}
+                                </td>
+                              );
+                            }
                             return <td key={`${response.id}-${column.key}`}>{response.values[column.key] || "—"}</td>;
                           })}
                         </tr>
@@ -882,6 +910,27 @@ const DisposableAttendancePage = ({ organization }: Props) => {
               </label>
 
               <div className="disposable-block">
+                <label className="toggle-pill">
+                  <input
+                    type="checkbox"
+                    checked={allowPreRegister}
+                    onChange={(event) => {
+                      const next = event.target.checked;
+                      setAllowPreRegister(next);
+                      if (next) {
+                        setCollect((prev) => ({ ...prev, email: true }));
+                      }
+                    }}
+                    disabled={!canCreate || isCreating}
+                  />
+                  Allow pre-register before event day
+                </label>
+                {allowPreRegister ? (
+                  <p className="muted">
+                    Participants can register before event day, then scan QR on event day for instant check-in using their email.
+                  </p>
+                ) : null}
+
                 <strong>Details to collect</strong>
                 <label className="workday-chip">
                   <input
@@ -890,7 +939,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                     onChange={(event) =>
                       setCollect((prev) => ({ ...prev, email: event.target.checked }))
                     }
-                    disabled={!canCreate || isCreating}
+                    disabled={!canCreate || isCreating || allowPreRegister}
                   />
                   Email
                 </label>

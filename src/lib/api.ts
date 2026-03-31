@@ -369,6 +369,7 @@ export const createDisposableAttendance = async (payload: {
   recurrenceMode: DisposableAttendance["recurrenceMode"];
   recurrenceEndDateISO: string | null;
   recurrenceCustomRule: string;
+  allowPreRegister?: boolean;
 }) =>
   request<DisposableAttendance>("/disposable-attendance", {
     method: "POST",

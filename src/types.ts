@@ -146,6 +146,7 @@ export type DisposableAttendance = {
   recurrenceMode: DisposableRecurrenceMode;
   recurrenceEndDateISO: string | null;
   recurrenceCustomRule: string;
+  allowPreRegister?: boolean;
   isArchived: boolean;
   createdAtISO: string;
   updatedAtISO?: string;
@@ -156,6 +157,11 @@ export type DisposableAttendanceResponse = {
   attendanceId: string;
   source?: "admin" | "public" | string;
   submittedById?: string | null;
+  status?: "preregistered" | "checked-in";
+  preRegisteredAtISO?: string | null;
+  checkedInAtISO?: string | null;
+  action?: "pre-registered" | "already-preregistered" | "checked-in";
+  message?: string;
   submittedAtISO: string;
   values: Record<string, string>;
 };
@@ -169,6 +175,9 @@ export type DisposableResponsesTableRow = {
   id: string;
   submittedAtISO: string;
   source: string;
+  status?: "preregistered" | "checked-in";
+  preRegisteredAtISO?: string | null;
+  checkedInAtISO?: string | null;
   values: Record<string, string>;
 };
 
@@ -191,6 +200,7 @@ export type PublicDisposableAttendanceForm = {
   recurrenceMode: DisposableRecurrenceMode;
   recurrenceEndDateISO: string | null;
   recurrenceCustomRule: string;
+  allowPreRegister?: boolean;
 };
 
 export type PublicHoliday = {

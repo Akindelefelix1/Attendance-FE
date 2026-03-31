@@ -5,7 +5,7 @@ import {
   getPublicDisposableAttendanceForm,
   submitPublicDisposableAttendanceResponse
 } from "../lib/api";
-import { formatDateLong } from "../lib/time";
+import { formatDateLong, getTodayISO } from "../lib/time";
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error && error.message.trim()) {
@@ -33,6 +33,11 @@ const PublicDisposableCheckInPage = () => {
     if (!attendance) return "Event check-in";
     return attendance.title;
   }, [attendance]);
+
+  const todayISO = getTodayISO();
+  const isEventDay = attendance?.eventDateISO === todayISO;
+  const isBeforeEvent = attendance ? todayISO < attendance.eventDateISO : false;
+  const preRegisterEnabled = Boolean(attendance?.allowPreRegister);
 
   const showToast = (kind: ToastState["kind"], message: string) => {
     setToast({ kind, message });
@@ -89,9 +94,15 @@ const PublicDisposableCheckInPage = () => {
     if (!attendance) return;
     setError("");
 
+    const emailValue = (values.email ?? "").trim();
+    const emailOnlyCheckIn = preRegisterEnabled && isEventDay && emailValue.length > 0;
+
     for (const field of attendance.fields) {
       const nextValue = values[field.id]?.trim() ?? "";
       if (field.required && !nextValue) {
+        if (emailOnlyCheckIn && field.id !== "email") {
+          continue;
+        }
         setError(`Please provide ${field.label}.`);
         return;
       }
@@ -99,7 +110,7 @@ const PublicDisposableCheckInPage = () => {
 
     try {
       setIsSubmitting(true);
-      await submitPublicDisposableAttendanceResponse({
+      const result = await submitPublicDisposableAttendanceResponse({
         publicId: attendance.publicId,
         values: Object.fromEntries(
           Object.entries(values).map(([key, value]) => [key, value.trim()])
@@ -112,7 +123,7 @@ const PublicDisposableCheckInPage = () => {
       });
       setValues(cleared);
       setResponseCount((prev) => prev + 1);
-      showToast("success", "Check-in submitted successfully.");
+      showToast("success", result.message || "Check-in submitted successfully.");
     } catch (submitError) {
       const message = getErrorMessage(submitError, "Could not submit check-in.");
       setError(message);
@@ -225,6 +236,15 @@ const PublicDisposableCheckInPage = () => {
           </p>
           {attendance?.description ? <p>{attendance.description}</p> : null}
           {attendance?.location ? <p className="muted">Location: {attendance.location}</p> : null}
+          {preRegisterEnabled ? (
+            <p className="muted">
+              {isBeforeEvent
+                ? "Pre-registration is open now. Return on event day to complete check-in."
+                : isEventDay
+                  ? "Event day check-in is live. If you already pre-registered, enter only your email to check in."
+                  : "Event date has passed."}
+            </p>
+          ) : null}
           <span className="pill">Responses: {responseCount}</span>
         </div>
 
@@ -249,7 +269,11 @@ const PublicDisposableCheckInPage = () => {
           {error ? <p className="auth-error">{error}</p> : null}
 
           <button className="btn solid" type="button" onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit check-in"}
+            {isSubmitting
+              ? "Submitting..."
+              : preRegisterEnabled && isBeforeEvent
+                ? "Pre-register"
+                : "Submit check-in"}
           </button>
         </div>
       </section>
