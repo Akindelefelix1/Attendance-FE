@@ -192,3 +192,16 @@ export type PublicDisposableAttendanceForm = {
   recurrenceEndDateISO: string | null;
   recurrenceCustomRule: string;
 };
+
+export type PublicHoliday = {
+  id: string;
+  organizationId: string;
+  name: string;
+  dateISO: string;
+  isRecurring: boolean;
+  recurrencePattern?: string;
+  description: string;
+  affectsAllStaff: boolean;
+  createdAt: string;
+  updatedAt: string;
+};

@@ -6,6 +6,7 @@ import type {
   DisposableField,
   DisposableResponsesTable,
   PublicDisposableAttendanceForm,
+  PublicHoliday,
   OrgSettings,
   Organization,
   StaffMember
@@ -435,3 +436,30 @@ export const submitPublicDisposableAttendanceResponse = (payload: {
       credentials: "omit"
     }
   );
+
+export const listPublicHolidays = (orgId: string): Promise<PublicHoliday[]> =>
+  request<PublicHoliday[]>(`/organizations/${orgId}/public-holidays`);
+
+export const createPublicHoliday = (
+  orgId: string,
+  payload: Omit<PublicHoliday, "id" | "organizationId" | "createdAt" | "updatedAt">
+): Promise<PublicHoliday> =>
+  request<PublicHoliday>(`/organizations/${orgId}/public-holidays`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+export const updatePublicHoliday = (
+  orgId: string,
+  id: string,
+  payload: Partial<PublicHoliday>
+): Promise<PublicHoliday> =>
+  request<PublicHoliday>(`/organizations/${orgId}/public-holidays/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+
+export const deletePublicHoliday = (orgId: string, id: string): Promise<void> =>
+  request(`/organizations/${orgId}/public-holidays/${id}`, {
+    method: "DELETE"
+  });

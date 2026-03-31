@@ -29,6 +29,7 @@ import ConfirmModal from "./components/ConfirmModal";
 import OrganizationsPage from "./components/OrganizationsPage";
 import AnalyticsPage from "./components/AnalyticsPage";
 import DisposableAttendancePage from "./components/DisposableAttendancePage";
+import PublicHolidaysPage from "./components/PublicHolidaysPage";
 
 type ViewMode = "admin" | "staff";
 
@@ -46,6 +47,7 @@ const App = () => {
   const isAnalyticsPage = location.pathname === "/app/analytics";
   const isDisposablePage = location.pathname === "/app/disposable";
   const isSettingsPage = location.pathname === "/app/settings";
+  const isPublicHolidaysPage = location.pathname === "/app/holidays";
   const isDashboardPage = location.pathname === "/app";
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [attendanceForDate, setAttendanceForDate] = useState<AttendanceRecord[]>([]);
@@ -708,6 +710,30 @@ const App = () => {
           ) : null}
           {effectiveViewMode === "admin" ? (
             <button
+              className={`nav-pill ${isPublicHolidaysPage ? "active" : ""}`}
+              type="button"
+              onClick={() => {
+                setMobileTopbarOpen(false);
+                navigate(isPublicHolidaysPage ? "/app" : "/app/holidays");
+              }}
+            >
+              <span className="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="presentation">
+                  <path
+                    d="M4 6h16M6 3v4m12-4v4M4 11h16v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+              {isPublicHolidaysPage ? "Back to dashboard" : "Holidays"}
+            </button>
+          ) : null}
+          {effectiveViewMode === "admin" ? (
+            <button
               className={`nav-pill ${isSettingsPage ? "active" : ""}`}
               type="button"
               onClick={() => {
@@ -773,6 +799,10 @@ const App = () => {
       ) : isDisposablePage && effectiveViewMode === "admin" ? (
         <main className="layout full">
           <DisposableAttendancePage organization={selectedOrg} />
+        </main>
+      ) : isPublicHolidaysPage && effectiveViewMode === "admin" ? (
+        <main className="layout full">
+          <PublicHolidaysPage organization={selectedOrg} />
         </main>
       ) : isSettingsPage && effectiveViewMode === "admin" ? (
         <main className="layout full">
