@@ -32,13 +32,7 @@ const PublicHolidaysPage = ({ organization }: Props) => {
   const [submitting, setSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  // Debug log
   useEffect(() => {
-    console.log('PublicHolidaysPage mounted with organization:', organization);
-  }, []);
-
-  useEffect(() => {
-    console.log('Organization changed:', organization);
     if (organization) {
       loadHolidays();
     }
@@ -49,13 +43,10 @@ const PublicHolidaysPage = ({ organization }: Props) => {
     setLoading(true);
     setError("");
     try {
-      console.log('Fetching holidays for org:', organization.id);
       const data = await listPublicHolidays(organization.id);
-      console.log('Holidays loaded:', data);
       setHolidays(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load holidays";
-      console.error('Error loading holidays:', err);
       setError(message);
     } finally {
       setLoading(false);

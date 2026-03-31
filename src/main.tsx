@@ -55,6 +55,7 @@ createRoot(rootElement).render(
         <Route path="/app/organizations" element={<App />} />
         <Route path="/app/analytics" element={<App />} />
         <Route path="/app/disposable" element={<App />} />
+        <Route path="/app/holidays" element={<App />} />
         <Route path="/app/settings" element={<App />} />
         <Route path="/public/disposable/:publicId" element={<PublicDisposableCheckInPage />} />
       </Routes>
