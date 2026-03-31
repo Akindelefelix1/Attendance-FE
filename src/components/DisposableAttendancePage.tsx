@@ -137,6 +137,10 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [isManaging, setIsManaging] = useState(false);
   const [isSavingFields, setIsSavingFields] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [isAdminCheckInOpen, setIsAdminCheckInOpen] = useState(false);
+  const [adminCheckInValues, setAdminCheckInValues] = useState<Record<string, string>>({});
+  const [adminCheckInError, setAdminCheckInError] = useState("");
+  const [isSubmittingAdminCheckIn, setIsSubmittingAdminCheckIn] = useState(false);
 
   const activeItem = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
@@ -586,6 +590,57 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       showToast("success", "Public check-in link copied.");
     } catch {
       showToast("error", "Could not copy link. Please copy manually.");
+    }
+  };
+
+  const handleOpenAdminCheckIn = () => {
+    if (!activeItem) return;
+    const initial: Record<string, string> = {};
+    activeItem.fields.forEach((field) => {
+      initial[field.id] = "";
+    });
+    setAdminCheckInValues(initial);
+    setAdminCheckInError("");
+    setIsAdminCheckInOpen(true);
+  };
+
+  const handleCloseAdminCheckIn = () => {
+    setIsAdminCheckInOpen(false);
+    setAdminCheckInValues({});
+    setAdminCheckInError("");
+  };
+
+  const handleSubmitAdminCheckIn = async () => {
+    if (!activeItem || !organization) return;
+    setAdminCheckInError("");
+
+    for (const field of activeItem.fields) {
+      const value = adminCheckInValues[field.id]?.trim() ?? "";
+      if (field.required && !value) {
+        setAdminCheckInError(`Please fill ${field.label}.`);
+        return;
+      }
+    }
+
+    try {
+      setIsSubmittingAdminCheckIn(true);
+      await submitDisposableAttendanceResponse({
+        attendanceId: activeItem.id,
+        orgId: organization.id,
+        values: Object.fromEntries(
+          Object.entries(adminCheckInValues).map(([key, value]) => [key, value.trim()])
+        )
+      });
+
+      await reloadResponses(activeItem.id);
+      handleCloseAdminCheckIn();
+      showToast("success", "Attendance checked in by admin.");
+    } catch (error) {
+      const message = getErrorMessage(error, "Could not submit admin check-in.");
+      setAdminCheckInError(message);
+      showToast("error", message);
+    } finally {
+      setIsSubmittingAdminCheckIn(false);
     }
   };
 
