@@ -137,6 +137,10 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [isManaging, setIsManaging] = useState(false);
   const [isSavingFields, setIsSavingFields] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [isAdminCheckInOpen, setIsAdminCheckInOpen] = useState(false);
+  const [adminCheckInValues, setAdminCheckInValues] = useState<Record<string, string>>({});
+  const [adminCheckInError, setAdminCheckInError] = useState("");
+  const [isSubmittingAdminCheckIn, setIsSubmittingAdminCheckIn] = useState(false);
 
   const activeItem = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
@@ -286,6 +290,9 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     );
     setEditCustomFieldInput("");
     setEditFieldsError("");
+    setAdminCheckInValues(initial);
+    setAdminCheckInError("");
+    setIsAdminCheckInOpen(false);
   }, [activeItem?.id]);
 
   const canCreate = items.length < limit;
@@ -589,6 +596,57 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     }
   };
 
+  const handleOpenAdminCheckIn = () => {
+    if (!activeItem) return;
+    const initial: Record<string, string> = {};
+    activeItem.fields.forEach((field) => {
+      initial[field.id] = "";
+    });
+    setAdminCheckInValues(initial);
+    setAdminCheckInError("");
+    setIsAdminCheckInOpen(true);
+  };
+
+  const handleCloseAdminCheckIn = () => {
+    setIsAdminCheckInOpen(false);
+    setAdminCheckInValues({});
+    setAdminCheckInError("");
+  };
+
+  const handleSubmitAdminCheckIn = async () => {
+    if (!activeItem || !organization) return;
+    setAdminCheckInError("");
+
+    for (const field of activeItem.fields) {
+      const value = adminCheckInValues[field.id]?.trim() ?? "";
+      if (field.required && !value) {
+        setAdminCheckInError(`Please fill ${field.label}.`);
+        return;
+      }
+    }
+
+    try {
+      setIsSubmittingAdminCheckIn(true);
+      await submitDisposableAttendanceResponse({
+        attendanceId: activeItem.id,
+        orgId: organization.id,
+        values: Object.fromEntries(
+          Object.entries(adminCheckInValues).map(([key, value]) => [key, value.trim()])
+        )
+      });
+
+      await reloadResponses(activeItem.id);
+      handleCloseAdminCheckIn();
+      showToast("success", "Attendance checked in by admin.");
+    } catch (error) {
+      const message = getErrorMessage(error, "Could not submit admin check-in.");
+      setAdminCheckInError(message);
+      showToast("error", message);
+    } finally {
+      setIsSubmittingAdminCheckIn(false);
+    }
+  };
+
   if (!organization) {
     return (
       <section className="panel disposable-page">
@@ -858,6 +916,16 @@ const DisposableAttendancePage = ({ organization }: Props) => {
             {!activeItem.isArchived ? (
               <div className="disposable-block">
                 <h4>Take attendance</h4>
+                <div className="disposable-actions" style={{ marginBottom: "0.6rem" }}>
+                  <button
+                    className="btn ghost"
+                    type="button"
+                    onClick={handleOpenAdminCheckIn}
+                    disabled={isManaging || isSavingFields || isSubmitting || isAdminCheckInOpen}
+                  >
+                    Open admin check-in modal
+                  </button>
+                </div>
                 <div className="disposable-response-form">
                   {activeItem.fields.map((field) => (
                     <label key={field.id}>
@@ -972,6 +1040,69 @@ const DisposableAttendancePage = ({ organization }: Props) => {
           </>
         ) : null}
       </div>
+
+      {isAdminCheckInOpen && activeItem ? (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => !isSubmittingAdminCheckIn && handleCloseAdminCheckIn()}
+        >
+          <div
+            className="modal modal-wide"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Admin check-in"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h3>Admin check-in</h3>
+              <p className="modal-subtitle">
+                Manually check in an attendee for "<strong>{activeItem.title}</strong>".
+              </p>
+            </div>
+
+            <div className="disposable-response-form">
+              {activeItem.fields.map((field) => (
+                <label key={`admin-${field.id}`}>
+                  {field.label}
+                  <input
+                    type={field.type === "email" ? "email" : "text"}
+                    value={adminCheckInValues[field.id] ?? ""}
+                    onChange={(event) =>
+                      setAdminCheckInValues((prev) => ({
+                        ...prev,
+                        [field.id]: event.target.value
+                      }))
+                    }
+                    placeholder={`Enter ${fieldTypeToLabel(field.type).toLowerCase()}`}
+                    disabled={isSubmittingAdminCheckIn}
+                  />
+                </label>
+              ))}
+              {adminCheckInError ? <p className="auth-error">{adminCheckInError}</p> : null}
+            </div>
+
+            <div className="modal-actions">
+              <button
+                className="btn ghost"
+                type="button"
+                onClick={handleCloseAdminCheckIn}
+                disabled={isSubmittingAdminCheckIn}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn solid"
+                type="button"
+                onClick={handleSubmitAdminCheckIn}
+                disabled={isSubmittingAdminCheckIn}
+              >
+                {isSubmittingAdminCheckIn ? "Checking in..." : "Check in attendee"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {isCreateModalOpen ? (
         <div className="modal-backdrop" role="presentation">
