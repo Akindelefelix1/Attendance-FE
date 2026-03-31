@@ -155,15 +155,13 @@ const PublicHolidaysPage = ({ organization }: Props) => {
   if (!organization) {
     return (
       <main className="layout full">
-        <div className="panel settings-header">
-          <div>
-            <h2>Public Holidays</h2>
-            <p className="muted">Manage public holidays for your organization.</p>
-          </div>
+        <div style={{ padding: '20px', backgroundColor: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
+          <h2 style={{ margin: '0 0 8px 0' }}>Public Holidays</h2>
+          <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>Manage public holidays for your organization.</p>
         </div>
-        <div className="empty-state">
+        <div style={{ padding: '40px 20px', textAlign: 'center', color: '#999' }}>
           <h3>No organization selected</h3>
-          <p>Please select an organization to manage public holidays.</p>
+          <p>Please select an organization from the top dropdown to manage public holidays.</p>
         </div>
       </main>
     );
@@ -171,35 +169,44 @@ const PublicHolidaysPage = ({ organization }: Props) => {
 
   return (
     <main className="layout full">
-      <div className="panel settings-header">
+      <div style={{ padding: '20px', backgroundColor: '#f5f5f5', borderBottom: '1px solid #ddd', marginBottom: '20px' }}>
         <div>
-          <h2>Public Holidays</h2>
-          <p className="muted">
+          <h2 style={{ margin: '0 0 8px 0' }}>Public Holidays</h2>
+          <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
             Manage public holidays. Staff won't be marked absent on public holidays.
           </p>
         </div>
-        <div className="settings-actions">
+        <div style={{ marginTop: '12px' }}>
           <button
-            className="btn solid"
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#0066cc',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: formMode !== null || loading ? 'not-allowed' : 'pointer',
+              opacity: formMode !== null || loading ? 0.6 : 1,
+              fontSize: '14px'
+            }}
             type="button"
             onClick={handleAddClick}
             disabled={formMode !== null || loading}
           >
-            Add Holiday
+            + Add Holiday
           </button>
         </div>
       </div>
 
       {error && (
-        <div style={{ padding: '12px', backgroundColor: '#fee', color: '#c00', borderRadius: '4px', margin: '16px 0', border: '1px solid #f99' }}>
+        <div style={{ padding: '12px', backgroundColor: '#fee', color: '#c00', borderRadius: '4px', margin: '0 20px 16px 20px', border: '1px solid #f99' }}>
           <strong>Error:</strong> {error}
         </div>
       )}
 
       {formMode !== null && (
-        <div className="panel form-section">
-          <h3>{formMode === "add" ? "Add New Holiday" : "Edit Holiday"}</h3>
-          <form onSubmit={handleSubmit} className="holiday-form">
+        <div style={{ margin: '0 20px 20px 20px', padding: '20px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '4px' }}>
+          <h3 style={{ margin: '0 0 16px 0' }}>{formMode === "add" ? "Add New Holiday" : "Edit Holiday"}</h3>
+          <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
             <label>
               Holiday name *
               <input
@@ -273,10 +280,19 @@ const PublicHolidaysPage = ({ organization }: Props) => {
               Applies to all staff
             </label>
 
-            <div className="form-actions">
+            <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
               <button
                 type="submit"
-                className="btn solid"
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#0066cc',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  opacity: submitting ? 0.6 : 1,
+                  fontSize: '14px'
+                }}
                 disabled={submitting}
               >
                 {submitting
@@ -289,7 +305,16 @@ const PublicHolidaysPage = ({ organization }: Props) => {
               </button>
               <button
                 type="button"
-                className="btn ghost"
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#e8e8e8',
+                  color: '#333',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  opacity: submitting ? 0.6 : 1,
+                  fontSize: '14px'
+                }}
                 onClick={resetForm}
                 disabled={submitting}
               >
@@ -310,59 +335,94 @@ const PublicHolidaysPage = ({ organization }: Props) => {
           <p>Click "Add Holiday" to create your first public holiday.</p>
         </div>
       ) : (
-        <div className="panel holidays-table">
-          <div className="holidays-scroll">
-            <table>
+        <div style={{ margin: '0 20px', padding: '20px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '4px' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Description</th>
-                  <th>Actions</th>
+                <tr style={{ backgroundColor: '#f9f9f9', borderBottom: '2px solid #ddd' }}>
+                  <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Name</th>
+                  <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Date</th>
+                  <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Type</th>
+                  <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Description</th>
+                  <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {holidays.map((holiday) => (
-                  <tr key={holiday.id}>
-                    <td className="holiday-name">{holiday.name}</td>
-                    <td className="holiday-date">{holiday.dateISO}</td>
-                    <td className="holiday-type">
-                      {holiday.isRecurring ? "Recurring" : "One-time"}
+                  <tr key={holiday.id} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '12px' }}>{holiday.name}</td>
+                    <td style={{ padding: '12px' }}>{holiday.dateISO}</td>
+                    <td style={{ padding: '12px' }}>
+                      <span style={{ backgroundColor: holiday.isRecurring ? '#e3f2fd' : '#f5f5f5', padding: '4px 8px', borderRadius: '3px', fontSize: '12px' }}>
+                        {holiday.isRecurring ? "Recurring" : "One-time"}
+                      </span>
                     </td>
-                    <td className="holiday-description">
+                    <td style={{ padding: '12px' }}>
                       {holiday.description || "—"}
                     </td>
-                    <td className="holiday-actions">
+                    <td style={{ padding: '12px' }}>
                       <button
-                        className="action-button"
+                        style={{
+                          padding: '4px 8px',
+                          marginRight: '8px',
+                          backgroundColor: '#f0f0f0',
+                          border: 'none',
+                          borderRadius: '3px',
+                          cursor: submitting || deleteConfirm !== null ? 'not-allowed' : 'pointer',
+                          opacity: submitting || deleteConfirm !== null ? 0.6 : 1
+                        }}
                         onClick={() => handleEditClick(holiday)}
                         disabled={submitting || deleteConfirm !== null}
                         title="Edit"
                       >
-                        ✎
+                        ✎ Edit
                       </button>
                       <button
-                        className="action-button danger"
+                        style={{
+                          padding: '4px 8px',
+                          backgroundColor: '#ffebee',
+                          color: '#c00',
+                          border: 'none',
+                          borderRadius: '3px',
+                          cursor: submitting ? 'not-allowed' : 'pointer',
+                          opacity: submitting ? 0.6 : 1
+                        }}
                         onClick={() => setDeleteConfirm(holiday.id)}
                         disabled={submitting}
                         title="Delete"
                       >
-                        ✕
+                        ✕ Delete
                       </button>
                       {deleteConfirm === holiday.id && (
-                        <div className="delete-confirm">
-                          <p>Delete "{holiday.name}"?</p>
-                          <div className="confirm-actions">
+                        <div style={{ position: 'absolute', backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '4px', padding: '12px', marginTop: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', zIndex: 10 }}>
+                          <p style={{ margin: '0 0 12px 0' }}>Delete "{holiday.name}"?</p>
+                          <div style={{ display: 'flex', gap: '8px' }}>
                             <button
-                              className="btn small danger"
+                              style={{
+                                padding: '6px 12px',
+                                backgroundColor: '#c00',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '3px',
+                                cursor: submitting ? 'not-allowed' : 'pointer',
+                                opacity: submitting ? 0.6 : 1,
+                                fontSize: '12px'
+                              }}
                               onClick={() => handleDelete(holiday.id)}
                               disabled={submitting}
                             >
                               {submitting ? "..." : "Yes"}
                             </button>
                             <button
-                              className="btn small ghost"
+                              style={{
+                                padding: '6px 12px',
+                                backgroundColor: '#f0f0f0',
+                                border: 'none',
+                                borderRadius: '3px',
+                                cursor: submitting ? 'not-allowed' : 'pointer',
+                                opacity: submitting ? 0.6 : 1,
+                                fontSize: '12px'
+                              }}
                               onClick={() => setDeleteConfirm(null)}
                               disabled={submitting}
                             >
