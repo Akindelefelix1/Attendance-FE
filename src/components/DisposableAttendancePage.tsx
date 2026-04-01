@@ -17,6 +17,7 @@ import {
 } from "../lib/api";
 import { formatDateLong, getTodayISO } from "../lib/time";
 import ConfirmModal from "./ConfirmModal";
+import SuccessModal from "./SuccessModal";
 
 type Props = {
   organization: Organization | null;
@@ -139,6 +140,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [isManaging, setIsManaging] = useState(false);
   const [isSavingFields, setIsSavingFields] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [successModalMessage, setSuccessModalMessage] = useState<string>("");
   const [pendingCheckInResponse, setPendingCheckInResponse] =
     useState<DisposableAttendanceResponse | null>(null);
   const [isCheckingInResponse, setIsCheckingInResponse] = useState(false);
@@ -181,6 +183,10 @@ const DisposableAttendancePage = ({ organization }: Props) => {
 
   const showToast = (kind: ToastState["kind"], message: string) => {
     setToast({ kind, message });
+  };
+
+  const showSuccessModal = (message: string) => {
+    setSuccessModalMessage(message);
   };
 
   useEffect(() => {
@@ -421,7 +427,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       setRecurrenceCustomRule("");
       setAllowPreRegister(false);
       setIsCreateModalOpen(false);
-      showToast("success", "Disposable attendance created.");
+      showSuccessModal("Disposable attendance created.");
 
       await reloadItems();
     } catch (error) {
@@ -468,7 +474,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       await updateDisposableAttendanceFields(activeItem.id, organization.id, nextFields);
       await reloadItems();
       await reloadResponses(activeItem.id);
-      showToast("success", "Details to collect updated.");
+      showSuccessModal("Details to collect updated.");
     } catch (error) {
       const message = getErrorMessage(error, "Could not update details to collect.");
       setEditFieldsError(message);
@@ -507,7 +513,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       });
       setResponseValues(resetValues);
       await reloadResponses(activeItem.id);
-      showToast("success", "Attendance response submitted.");
+      showSuccessModal("Attendance response submitted.");
     } catch (error) {
       const message = getErrorMessage(error, "Could not submit attendance response.");
       setResponseError(message);
@@ -526,7 +532,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
         isArchived: !activeItem.isArchived
       });
       await reloadItems();
-      showToast("success", activeItem.isArchived ? "Attendance reopened." : "Attendance archived.");
+      showSuccessModal(activeItem.isArchived ? "Attendance reopened." : "Attendance archived.");
     } catch (error) {
       const message = getErrorMessage(error, "Could not update disposable attendance.");
       setManageError(message);
@@ -543,7 +549,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       setManageError("");
       await deleteDisposableAttendance(activeItem.id, organization.id);
       await reloadItems();
-      showToast("success", "Disposable attendance deleted.");
+      showSuccessModal("Disposable attendance deleted.");
     } catch (error) {
       const message = getErrorMessage(error, "Could not delete disposable attendance.");
       setManageError(message);
@@ -595,7 +601,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     if (!publicLink) return;
     try {
       await navigator.clipboard.writeText(publicLink);
-      showToast("success", "Public check-in link copied.");
+      showSuccessModal("Public check-in link copied.");
     } catch {
       showToast("error", "Could not copy link. Please copy manually.");
     }
@@ -612,7 +618,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
         orgId: organization.id
       });
       await reloadResponses(activeItem.id);
-      showToast("success", "Attendee checked in successfully.");
+      showSuccessModal("Attendee checked in successfully.");
       setPendingCheckInResponse(null);
     } catch (error) {
       const message = getErrorMessage(error, "Could not check in attendee.");
@@ -1039,6 +1045,14 @@ const DisposableAttendancePage = ({ organization }: Props) => {
         confirmLabel="Check in"
         isLoading={isCheckingInResponse}
         loadingLabel="Checking in..."
+      />
+
+      <SuccessModal
+        isOpen={Boolean(successModalMessage)}
+        title="Action Successful"
+        message={successModalMessage}
+        onClose={() => setSuccessModalMessage("")}
+        closeLabel="Great"
       />
 
       {isCreateModalOpen ? (

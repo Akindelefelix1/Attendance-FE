@@ -6,6 +6,7 @@ import {
   submitPublicDisposableAttendanceResponse
 } from "../lib/api";
 import { formatDateLong, getTodayISO } from "../lib/time";
+import SuccessModal from "./SuccessModal";
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error && error.message.trim()) {
@@ -29,6 +30,7 @@ const PublicDisposableCheckInPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [eventDayFlow, setEventDayFlow] = useState<"checkin" | "register">("checkin");
+  const [successModalMessage, setSuccessModalMessage] = useState<string>("");
 
   const titleLabel = useMemo(() => {
     if (!attendance) return "Event check-in";
@@ -152,7 +154,7 @@ const PublicDisposableCheckInPage = () => {
       }
 
       setResponseCount((prev) => prev + 1);
-      showToast("success", result.message || "Check-in submitted successfully.");
+      setSuccessModalMessage(result.message || "Check-in submitted successfully.");
     } catch (submitError) {
       const message = getErrorMessage(submitError, "Could not submit check-in.");
       setError(message);
@@ -367,6 +369,13 @@ const PublicDisposableCheckInPage = () => {
           )}
         </div>
       </section>
+
+      <SuccessModal
+        isOpen={Boolean(successModalMessage)}
+        title="Success"
+        message={successModalMessage}
+        onClose={() => setSuccessModalMessage("")}
+      />
     </main>
   );
 };

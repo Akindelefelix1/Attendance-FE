@@ -2530,6 +2530,31 @@ input {
   width: min(520px, 100%);
 }
 
+.success-modal {
+  text-align: center;
+  gap: 0.9rem;
+  padding-top: 1.75rem;
+}
+
+.success-modal h3 {
+  margin: 0;
+}
+
+.success-modal .muted {
+  margin: 0;
+}
+
+.success-modal .modal-actions {
+  justify-content: center;
+}
+
+.success-modal-icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 0.2rem;
+  object-fit: contain;
+}
+
 .modal-header {
   margin-bottom: 1.5rem;
 }
