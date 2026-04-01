@@ -16,6 +16,7 @@ type Props = {
   settings: OrgSettings;
   onSignIn: (staffId: string) => void;
   onSignOut: (staffId: string) => void;
+  onEditStaff?: (staff: StaffMember) => void;
   canEdit: boolean;
   canEditStaff?: (staff: StaffMember) => boolean;
   isBusy?: boolean;
@@ -27,6 +28,7 @@ const AttendanceTable = ({
   settings,
   onSignIn,
   onSignOut,
+  onEditStaff,
   canEdit,
   canEditStaff,
   isBusy = false
@@ -77,7 +79,23 @@ const AttendanceTable = ({
                     <div className="staff-cell">
                       <span className="avatar">{person.fullName[0]}</span>
                       <div>
-                        <strong>{person.fullName}</strong>
+                        <button
+                          className="btn-link"
+                          onClick={() => onEditStaff?.(person)}
+                          style={{
+                            cursor: "pointer",
+                            color: "inherit",
+                            textDecoration: "underline",
+                            fontSize: "inherit",
+                            fontWeight: "inherit",
+                            border: "none",
+                            background: "none",
+                            padding: 0,
+                            font: "inherit"
+                          }}
+                        >
+                          <strong>{person.fullName}</strong>
+                        </button>
                         <span className="muted">{person.email}</span>
                       </div>
                     </div>

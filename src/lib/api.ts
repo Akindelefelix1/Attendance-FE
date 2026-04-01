@@ -221,6 +221,21 @@ export const addStaff = (payload: {
     body: JSON.stringify(payload)
   });
 
+export const updateStaff = (payload: {
+  staffId: string;
+  fullName?: string;
+  role?: string;
+  email?: string;
+}) =>
+  request<StaffMember>(`/staff/${payload.staffId}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      fullName: payload.fullName,
+      role: payload.role,
+      email: payload.email
+    })
+  });
+
 export const listAttendanceForDate = (organizationId: string, dateISO: string) =>
   request<AttendanceRecord[]>(
     `/attendance?orgId=${encodeURIComponent(organizationId)}&dateISO=${encodeURIComponent(
@@ -429,6 +444,20 @@ export const checkInDisposableAttendanceResponse = async (payload: {
     {
       method: "POST",
       body: JSON.stringify({ orgId: payload.orgId })
+    }
+  );
+
+export const updateDisposableAttendanceResponse = async (payload: {
+  attendanceId: string;
+  responseId: string;
+  orgId: string;
+  values: Record<string, string>;
+}) =>
+  request<DisposableAttendanceResponse>(
+    `/disposable-attendance/${payload.attendanceId}/responses/${payload.responseId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ orgId: payload.orgId, values: payload.values })
     }
   );
 

@@ -13,11 +13,13 @@ import {
   listDisposableAttendances,
   submitDisposableAttendanceResponse,
   updateDisposableAttendanceFields,
-  updateDisposableAttendance
+  updateDisposableAttendance,
+  updateDisposableAttendanceResponse
 } from "../lib/api";
 import { formatDateLong, getTodayISO } from "../lib/time";
 import ConfirmModal from "./ConfirmModal";
 import SuccessModal from "./SuccessModal";
+import EditResponseModal from "./EditResponseModal";
 
 type Props = {
   organization: Organization | null;
@@ -149,6 +151,9 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [isPageFocused, setIsPageFocused] = useState(
     typeof document !== "undefined" ? document.hasFocus() && document.visibilityState === "visible" : true
   );
+  const [editingResponse, setEditingResponse] = useState<DisposableAttendanceResponse | null>(null);
+  const [isUpdatingResponse, setIsUpdatingResponse] = useState(false);
+  const [updateResponseError, setUpdateResponseError] = useState("");
 
   const activeItem = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
@@ -661,6 +666,30 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     }
   };
 
+  const handleUpdateResponse = async (values: Record<string, string>) => {
+    if (!activeItem || !organization || !editingResponse) return;
+
+    try {
+      setIsUpdatingResponse(true);
+      setUpdateResponseError("");
+      await updateDisposableAttendanceResponse({
+        attendanceId: activeItem.id,
+        responseId: editingResponse.id,
+        orgId: organization.id,
+        values
+      });
+      await reloadResponses(activeItem.id);
+      showSuccessModal("Attendee details updated successfully.");
+      setEditingResponse(null);
+    } catch (error) {
+      const message = getErrorMessage(error, "Could not update attendee details.");
+      setUpdateResponseError(message);
+      showToast("error", message);
+    } finally {
+      setIsUpdatingResponse(false);
+    }
+  };
+
   const handleRefreshResponses = async () => {
     if (!activeItem) return;
     try {
@@ -1057,6 +1086,19 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                                     </td>
                                   );
                                 }
+                                if (column.key === "full-name") {
+                                  return (
+                                    <td key={`${response.id}-${column.key}`}>
+                                      <button
+                                        className="btn-link"
+                                        onClick={() => setEditingResponse(response)}
+                                        style={{ cursor: "pointer", color: "inherit", textDecoration: "underline" }}
+                                      >
+                                        {response.values[column.key] || "—"}
+                                      </button>
+                                    </td>
+                                  );
+                                }
                                 return <td key={`${response.id}-${column.key}`}>{response.values[column.key] || "—"}</td>;
                               })}
                               {activeItem.allowPreRegister ? (
@@ -1129,6 +1171,16 @@ const DisposableAttendancePage = ({ organization }: Props) => {
         confirmLabel="Delete"
         isLoading={isManaging}
         loadingLabel="Deleting..."
+      />
+
+      <EditResponseModal
+        isOpen={Boolean(editingResponse)}
+        response={editingResponse}
+        fields={activeItem?.fields ?? []}
+        onClose={() => setEditingResponse(null)}
+        onSave={handleUpdateResponse}
+        isLoading={isUpdatingResponse}
+        error={updateResponseError}
       />
 
       <SuccessModal

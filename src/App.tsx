@@ -15,7 +15,8 @@ import {
   signInStaff,
   signOutStaff,
   updateOrganization,
-  updateSettings
+  updateSettings,
+  updateStaff
 } from "./lib/api";
 import { formatDateLong, getTodayISO } from "./lib/time";
 import AttendanceTable from "./components/AttendanceTable";
@@ -26,6 +27,7 @@ import AdminSettings from "./components/AdminSettings";
 import AdminDashboard from "./components/AdminDashboard";
 import StaffDashboard from "./components/StaffDashboard";
 import ConfirmModal from "./components/ConfirmModal";
+import EditStaffModal from "./components/EditStaffModal";
 import OrganizationsPage from "./components/OrganizationsPage";
 import AnalyticsPage from "./components/AnalyticsPage";
 import DisposableAttendancePage from "./components/DisposableAttendancePage";
@@ -81,6 +83,9 @@ const App = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [adminGateError, setAdminGateError] = useState("");
   const [onboardError, setOnboardError] = useState("");
+  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
+  const [isEditingStaff, setIsEditingStaff] = useState(false);
+  const [editStaffError, setEditStaffError] = useState("");
 
   const todayISO = getTodayISO();
   const [selectedDateISO, setSelectedDateISO] = useState(todayISO);
@@ -269,6 +274,34 @@ const App = () => {
           : "Could not add staff member.";
       setOnboardError(message);
       return false;
+    }
+  };
+
+  const handleUpdateStaff = async (
+    staffId: string,
+    changes: { fullName?: string; role?: string; email?: string }
+  ) => {
+    if (!selectedOrg) return;
+    setEditStaffError("");
+    try {
+      setIsEditingStaff(true);
+      await updateStaff({
+        staffId,
+        ...changes
+      });
+      const refreshed = await getOrganization(selectedOrg.id);
+      setOrganizations((prev) =>
+        prev.map((org) => (org.id === refreshed.id ? refreshed : org))
+      );
+      setEditingStaff(null);
+    } catch (error) {
+      const message =
+        error instanceof ApiError || error instanceof Error
+          ? error.message
+          : "Could not update staff member.";
+      setEditStaffError(message);
+    } finally {
+      setIsEditingStaff(false);
     }
   };
 
@@ -1104,6 +1137,7 @@ const App = () => {
                     settings={selectedOrg.settings}
                     onSignIn={(staffId) => requestAction(staffId, "sign-in")}
                     onSignOut={(staffId) => requestAction(staffId, "sign-out")}
+                    onEditStaff={(staff) => setEditingStaff(staff)}
                     canEdit={canEditToday}
                     canEditStaff={canEditStaffMember}
                     isBusy={isBusy}
@@ -1196,6 +1230,7 @@ const App = () => {
                     settings={selectedOrg.settings}
                     onSignIn={(staffId) => requestAction(staffId, "sign-in")}
                     onSignOut={(staffId) => requestAction(staffId, "sign-out")}
+                    onEditStaff={(staff) => setEditingStaff(staff)}
                     canEdit={canEditToday}
                     canEditStaff={canEditStaffMember}
                     isBusy={isBusy}
@@ -1230,6 +1265,16 @@ const App = () => {
         confirmLabel="Log out"
         onConfirm={handleConfirmLogout}
         onCancel={handleCancelLogout}
+      />
+
+      <EditStaffModal
+        isOpen={Boolean(editingStaff)}
+        staff={editingStaff}
+        roles={selectedOrg?.settings.roles ?? []}
+        onClose={() => setEditingStaff(null)}
+        onSave={handleUpdateStaff}
+        isLoading={isEditingStaff}
+        error={editStaffError}
       />
 
       {showAdminGate ? (
