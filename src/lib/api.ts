@@ -419,6 +419,19 @@ export const submitDisposableAttendanceResponse = async (payload: {
     }
   );
 
+export const checkInDisposableAttendanceResponse = async (payload: {
+  attendanceId: string;
+  responseId: string;
+  orgId: string;
+}) =>
+  request<DisposableAttendanceResponse>(
+    `/disposable-attendance/${payload.attendanceId}/responses/${payload.responseId}/check-in`,
+    {
+      method: "POST",
+      body: JSON.stringify({ orgId: payload.orgId })
+    }
+  );
+
 export const getPublicDisposableAttendanceForm = (publicId: string) =>
   request<PublicDisposableAttendanceForm>(
     `/public/disposable-attendance/${encodeURIComponent(publicId)}`,
@@ -428,12 +441,16 @@ export const getPublicDisposableAttendanceForm = (publicId: string) =>
 export const submitPublicDisposableAttendanceResponse = (payload: {
   publicId: string;
   values: Record<string, string>;
+  action?: "auto" | "preregister" | "checkin";
 }) =>
   request<DisposableAttendanceResponse>(
     `/public/disposable-attendance/${encodeURIComponent(payload.publicId)}/check-in`,
     {
       method: "POST",
-      body: JSON.stringify({ values: payload.values }),
+      body: JSON.stringify({
+        values: payload.values,
+        action: payload.action ?? "auto"
+      }),
       credentials: "omit"
     }
   );

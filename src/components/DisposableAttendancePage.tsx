@@ -6,6 +6,7 @@ import type {
   Organization
 } from "../types";
 import {
+  checkInDisposableAttendanceResponse,
   createDisposableAttendance,
   deleteDisposableAttendance,
   getDisposableAttendanceResponsesTable,
@@ -15,6 +16,7 @@ import {
   updateDisposableAttendance
 } from "../lib/api";
 import { formatDateLong, getTodayISO } from "../lib/time";
+import ConfirmModal from "./ConfirmModal";
 
 type Props = {
   organization: Organization | null;
@@ -137,10 +139,9 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [isManaging, setIsManaging] = useState(false);
   const [isSavingFields, setIsSavingFields] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
-  const [isAdminCheckInOpen, setIsAdminCheckInOpen] = useState(false);
-  const [adminCheckInValues, setAdminCheckInValues] = useState<Record<string, string>>({});
-  const [adminCheckInError, setAdminCheckInError] = useState("");
-  const [isSubmittingAdminCheckIn, setIsSubmittingAdminCheckIn] = useState(false);
+  const [pendingCheckInResponse, setPendingCheckInResponse] =
+    useState<DisposableAttendanceResponse | null>(null);
+  const [isCheckingInResponse, setIsCheckingInResponse] = useState(false);
 
   const activeItem = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
@@ -290,9 +291,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     );
     setEditCustomFieldInput("");
     setEditFieldsError("");
-    setAdminCheckInValues(initial);
-    setAdminCheckInError("");
-    setIsAdminCheckInOpen(false);
+    setPendingCheckInResponse(null);
   }, [activeItem?.id]);
 
   const canCreate = items.length < limit;
@@ -596,54 +595,25 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     }
   };
 
-  const handleOpenAdminCheckIn = () => {
-    if (!activeItem) return;
-    const initial: Record<string, string> = {};
-    activeItem.fields.forEach((field) => {
-      initial[field.id] = "";
-    });
-    setAdminCheckInValues(initial);
-    setAdminCheckInError("");
-    setIsAdminCheckInOpen(true);
-  };
-
-  const handleCloseAdminCheckIn = () => {
-    setIsAdminCheckInOpen(false);
-    setAdminCheckInValues({});
-    setAdminCheckInError("");
-  };
-
-  const handleSubmitAdminCheckIn = async () => {
-    if (!activeItem || !organization) return;
-    setAdminCheckInError("");
-
-    for (const field of activeItem.fields) {
-      const value = adminCheckInValues[field.id]?.trim() ?? "";
-      if (field.required && !value) {
-        setAdminCheckInError(`Please fill ${field.label}.`);
-        return;
-      }
-    }
+  const handleConfirmResponseCheckIn = async () => {
+    if (!activeItem || !organization || !pendingCheckInResponse) return;
 
     try {
-      setIsSubmittingAdminCheckIn(true);
-      await submitDisposableAttendanceResponse({
+      setIsCheckingInResponse(true);
+      await checkInDisposableAttendanceResponse({
         attendanceId: activeItem.id,
-        orgId: organization.id,
-        values: Object.fromEntries(
-          Object.entries(adminCheckInValues).map(([key, value]) => [key, value.trim()])
-        )
+        responseId: pendingCheckInResponse.id,
+        orgId: organization.id
       });
-
       await reloadResponses(activeItem.id);
-      handleCloseAdminCheckIn();
-      showToast("success", "Attendance checked in by admin.");
+      showToast("success", "Attendee checked in successfully.");
+      setPendingCheckInResponse(null);
     } catch (error) {
-      const message = getErrorMessage(error, "Could not submit admin check-in.");
-      setAdminCheckInError(message);
+      const message = getErrorMessage(error, "Could not check in attendee.");
+      setManageError(message);
       showToast("error", message);
     } finally {
-      setIsSubmittingAdminCheckIn(false);
+      setIsCheckingInResponse(false);
     }
   };
 
@@ -916,16 +886,6 @@ const DisposableAttendancePage = ({ organization }: Props) => {
             {!activeItem.isArchived ? (
               <div className="disposable-block">
                 <h4>Take attendance</h4>
-                <div className="disposable-actions" style={{ marginBottom: "0.6rem" }}>
-                  <button
-                    className="btn ghost"
-                    type="button"
-                    onClick={handleOpenAdminCheckIn}
-                    disabled={isManaging || isSavingFields || isSubmitting || isAdminCheckInOpen}
-                  >
-                    Open admin check-in modal
-                  </button>
-                </div>
                 <div className="disposable-response-form">
                   {activeItem.fields.map((field) => (
                     <label key={field.id}>
@@ -996,6 +956,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                             {responseColumns.map((column) => (
                               <th key={column.key}>{column.label}</th>
                             ))}
+                            {activeItem.allowPreRegister ? <th>Actions</th> : null}
                           </tr>
                         </thead>
                         <tbody>
@@ -1028,6 +989,22 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                                 }
                                 return <td key={`${response.id}-${column.key}`}>{response.values[column.key] || "—"}</td>;
                               })}
+                              {activeItem.allowPreRegister ? (
+                                <td>
+                                  <button
+                                    className="btn ghost"
+                                    type="button"
+                                    onClick={() => setPendingCheckInResponse(response)}
+                                    disabled={
+                                      response.status === "checked-in" ||
+                                      isCheckingInResponse ||
+                                      isManaging
+                                    }
+                                  >
+                                    {response.status === "checked-in" ? "Checked-In" : "Check in"}
+                                  </button>
+                                </td>
+                              ) : null}
                             </tr>
                           ))}
                         </tbody>
@@ -1041,68 +1018,16 @@ const DisposableAttendancePage = ({ organization }: Props) => {
         ) : null}
       </div>
 
-      {isAdminCheckInOpen && activeItem ? (
-        <div
-          className="modal-backdrop"
-          role="presentation"
-          onClick={() => !isSubmittingAdminCheckIn && handleCloseAdminCheckIn()}
-        >
-          <div
-            className="modal modal-wide"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Admin check-in"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="modal-header">
-              <h3>Admin check-in</h3>
-              <p className="modal-subtitle">
-                Manually check in an attendee for "<strong>{activeItem.title}</strong>".
-              </p>
-            </div>
-
-            <div className="disposable-response-form">
-              {activeItem.fields.map((field) => (
-                <label key={`admin-${field.id}`}>
-                  {field.label}
-                  <input
-                    type={field.type === "email" ? "email" : "text"}
-                    value={adminCheckInValues[field.id] ?? ""}
-                    onChange={(event) =>
-                      setAdminCheckInValues((prev) => ({
-                        ...prev,
-                        [field.id]: event.target.value
-                      }))
-                    }
-                    placeholder={`Enter ${fieldTypeToLabel(field.type).toLowerCase()}`}
-                    disabled={isSubmittingAdminCheckIn}
-                  />
-                </label>
-              ))}
-              {adminCheckInError ? <p className="auth-error">{adminCheckInError}</p> : null}
-            </div>
-
-            <div className="modal-actions">
-              <button
-                className="btn ghost"
-                type="button"
-                onClick={handleCloseAdminCheckIn}
-                disabled={isSubmittingAdminCheckIn}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn solid"
-                type="button"
-                onClick={handleSubmitAdminCheckIn}
-                disabled={isSubmittingAdminCheckIn}
-              >
-                {isSubmittingAdminCheckIn ? "Checking in..." : "Check in attendee"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmModal
+        isOpen={Boolean(pendingCheckInResponse)}
+        title="Confirm check-in"
+        description="Check in this pre-registered attendee now?"
+        onCancel={() => setPendingCheckInResponse(null)}
+        onConfirm={handleConfirmResponseCheckIn}
+        confirmLabel="Check in"
+        isLoading={isCheckingInResponse}
+        loadingLabel="Checking in..."
+      />
 
       {isCreateModalOpen ? (
         <div className="modal-backdrop" role="presentation">

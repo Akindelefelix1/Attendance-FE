@@ -90,12 +90,15 @@ const PublicDisposableCheckInPage = () => {
     void load();
   }, [publicId]);
 
-  const handleSubmit = async () => {
-    if (!attendance) return;
-    setError("");
+  const validateForAction = (action: "auto" | "preregister" | "checkin") => {
+    if (!attendance) return false;
 
     const emailValue = (values.email ?? "").trim();
-    const emailOnlyCheckIn = preRegisterEnabled && isEventDay && emailValue.length > 0;
+    const emailOnlyCheckIn =
+      preRegisterEnabled &&
+      isEventDay &&
+      action === "checkin" &&
+      emailValue.length > 0;
 
     for (const field of attendance.fields) {
       const nextValue = values[field.id]?.trim() ?? "";
@@ -104,14 +107,23 @@ const PublicDisposableCheckInPage = () => {
           continue;
         }
         setError(`Please provide ${field.label}.`);
-        return;
+        return false;
       }
     }
+
+    return true;
+  };
+
+  const handleSubmit = async (action: "auto" | "preregister" | "checkin" = "auto") => {
+    if (!attendance) return;
+    setError("");
+    if (!validateForAction(action)) return;
 
     try {
       setIsSubmitting(true);
       const result = await submitPublicDisposableAttendanceResponse({
         publicId: attendance.publicId,
+        action,
         values: Object.fromEntries(
           Object.entries(values).map(([key, value]) => [key, value.trim()])
         )
@@ -268,13 +280,30 @@ const PublicDisposableCheckInPage = () => {
 
           {error ? <p className="auth-error">{error}</p> : null}
 
-          <button className="btn solid" type="button" onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting
-              ? "Submitting..."
-              : preRegisterEnabled && isBeforeEvent
-                ? "Pre-register"
-                : "Submit check-in"}
-          </button>
+          {preRegisterEnabled ? (
+            <div className="disposable-actions">
+              <button
+                className="btn ghost"
+                type="button"
+                onClick={() => handleSubmit("preregister")}
+                disabled={isSubmitting || !isBeforeEvent}
+              >
+                {isSubmitting && isBeforeEvent ? "Submitting..." : "Pre-register"}
+              </button>
+              <button
+                className="btn solid"
+                type="button"
+                onClick={() => handleSubmit("checkin")}
+                disabled={isSubmitting || !isEventDay}
+              >
+                {isSubmitting && isEventDay ? "Submitting..." : "Check in"}
+              </button>
+            </div>
+          ) : (
+            <button className="btn solid" type="button" onClick={() => handleSubmit("auto")} disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Submit check-in"}
+            </button>
+          )}
         </div>
       </section>
     </main>
