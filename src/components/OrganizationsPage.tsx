@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import type { Organization } from "../types";
+import ConfirmModal from "./ConfirmModal";
 
 type Props = {
   organizations: Organization[];
@@ -27,6 +28,7 @@ const OrganizationsPage = ({
   const [drafts, setDrafts] = useState<DraftMap>({});
   const [newName, setNewName] = useState("");
   const [newLocation, setNewLocation] = useState("");
+  const [pendingRemoveOrgId, setPendingRemoveOrgId] = useState<string | null>(null);
 
   useEffect(() => {
     const next: DraftMap = {};
@@ -52,6 +54,11 @@ const OrganizationsPage = ({
       return { org, draft, isDirty };
     });
   }, [organizations, drafts]);
+
+  const pendingRemoveOrg = useMemo(
+    () => organizations.find((org) => org.id === pendingRemoveOrgId) ?? null,
+    [organizations, pendingRemoveOrgId]
+  );
 
   return (
     <section className="panel org-page">
@@ -136,7 +143,7 @@ const OrganizationsPage = ({
               <button
                 className="btn ghost danger"
                 type="button"
-                onClick={() => onRemove(org.id)}
+                onClick={() => setPendingRemoveOrgId(org.id)}
                 disabled={isBusy}
               >
                 {busyActionId === `org-remove-${org.id}` ? "Removing..." : "Remove"}
@@ -145,6 +152,21 @@ const OrganizationsPage = ({
           </div>
         ))}
       </div>
+
+      <ConfirmModal
+        isOpen={Boolean(pendingRemoveOrg)}
+        title="Remove organization"
+        description={`Are you sure you want to remove ${pendingRemoveOrg?.name ?? "this organization"}? This action cannot be undone.`}
+        onCancel={() => setPendingRemoveOrgId(null)}
+        onConfirm={() => {
+          if (!pendingRemoveOrg) return;
+          onRemove(pendingRemoveOrg.id);
+          setPendingRemoveOrgId(null);
+        }}
+        confirmLabel="Remove"
+        isLoading={Boolean(pendingRemoveOrg && busyActionId === `org-remove-${pendingRemoveOrg.id}`)}
+        loadingLabel="Removing..."
+      />
     </section>
   );
 };

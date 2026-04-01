@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { OrgSettings } from "../types";
 import { registerAdmin, setOrganizationStaffPassword } from "../lib/api";
 import SuccessModal from "./SuccessModal";
+import ConfirmModal from "./ConfirmModal";
 
 type Props = {
   settings: OrgSettings;
@@ -31,6 +32,8 @@ const AdminSettings = ({
   const [locatingOffice, setLocatingOffice] = useState(false);
   const [officeLocationError, setOfficeLocationError] = useState("");
   const [successModalMessage, setSuccessModalMessage] = useState("");
+  const [pendingRemoveAdminEmail, setPendingRemoveAdminEmail] = useState<string | null>(null);
+  const [pendingRemoveRole, setPendingRemoveRole] = useState<string | null>(null);
 
   const workingDays = settings.workingDays ?? [1, 2, 3, 4, 5];
   const adminLimit =
@@ -254,7 +257,7 @@ const AdminSettings = ({
               <div className="role-actions">
                 <button
                   type="button"
-                  onClick={() => handleRemoveAdmin(email)}
+                  onClick={() => setPendingRemoveAdminEmail(email)}
                   disabled={disabled || isBusy}
                 >
                   Remove
@@ -575,7 +578,7 @@ const AdminSettings = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleRemoveRole(role)}
+                      onClick={() => setPendingRemoveRole(role)}
                       disabled={disabled || isBusy}
                     >
                       Remove
@@ -597,6 +600,34 @@ const AdminSettings = ({
         title="Success"
         message={successModalMessage}
         onClose={() => setSuccessModalMessage("")}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(pendingRemoveAdminEmail)}
+        title="Remove admin"
+        description={`Remove ${pendingRemoveAdminEmail ?? "this admin"} from this organization?`}
+        onCancel={() => setPendingRemoveAdminEmail(null)}
+        onConfirm={() => {
+          if (!pendingRemoveAdminEmail) return;
+          handleRemoveAdmin(pendingRemoveAdminEmail);
+          setPendingRemoveAdminEmail(null);
+        }}
+        confirmLabel="Remove"
+        isLoading={false}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(pendingRemoveRole)}
+        title="Remove role"
+        description={`Remove ${pendingRemoveRole ?? "this role"} from organization roles?`}
+        onCancel={() => setPendingRemoveRole(null)}
+        onConfirm={() => {
+          if (!pendingRemoveRole) return;
+          handleRemoveRole(pendingRemoveRole);
+          setPendingRemoveRole(null);
+        }}
+        confirmLabel="Remove"
+        isLoading={false}
       />
     </>
   );

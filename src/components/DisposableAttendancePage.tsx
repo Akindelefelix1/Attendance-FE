@@ -141,6 +141,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [isSavingFields, setIsSavingFields] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [successModalMessage, setSuccessModalMessage] = useState<string>("");
+  const [confirmAction, setConfirmAction] = useState<"archive-toggle" | "delete" | null>(null);
   const [pendingCheckInResponse, setPendingCheckInResponse] =
     useState<DisposableAttendanceResponse | null>(null);
   const [isCheckingInResponse, setIsCheckingInResponse] = useState(false);
@@ -747,7 +748,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                 <button
                   className="btn ghost"
                   type="button"
-                  onClick={handleToggleArchive}
+                  onClick={() => setConfirmAction("archive-toggle")}
                   disabled={isManaging || isSubmitting || isCreating || isSavingFields}
                 >
                   {activeItem.isArchived ? "Reopen" : "Archive"}
@@ -766,7 +767,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                 <button
                   className="btn ghost danger"
                   type="button"
-                  onClick={handleDeleteActive}
+                  onClick={() => setConfirmAction("delete")}
                   disabled={isManaging || isSubmitting || isCreating || isSavingFields}
                 >
                   Delete
@@ -1096,6 +1097,38 @@ const DisposableAttendancePage = ({ organization }: Props) => {
         confirmLabel="Check in"
         isLoading={isCheckingInResponse}
         loadingLabel="Checking in..."
+      />
+
+      <ConfirmModal
+        isOpen={confirmAction === "archive-toggle"}
+        title={activeItem?.isArchived ? "Reopen attendance" : "Archive attendance"}
+        description={
+          activeItem?.isArchived
+            ? "This will reopen the attendance form and allow responses again."
+            : "This will archive the attendance form and stop new responses."
+        }
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={async () => {
+          await handleToggleArchive();
+          setConfirmAction(null);
+        }}
+        confirmLabel={activeItem?.isArchived ? "Reopen" : "Archive"}
+        isLoading={isManaging}
+        loadingLabel={activeItem?.isArchived ? "Reopening..." : "Archiving..."}
+      />
+
+      <ConfirmModal
+        isOpen={confirmAction === "delete"}
+        title="Delete disposable attendance"
+        description="This action cannot be undone. The attendance form and all responses will be permanently deleted."
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={async () => {
+          await handleDeleteActive();
+          setConfirmAction(null);
+        }}
+        confirmLabel="Delete"
+        isLoading={isManaging}
+        loadingLabel="Deleting..."
       />
 
       <SuccessModal
