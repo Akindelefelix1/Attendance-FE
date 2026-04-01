@@ -7,6 +7,7 @@ import {
   deletePublicHoliday,
   notifyStaffAboutHoliday
 } from "../lib/api";
+import SuccessModal from "./SuccessModal";
 
 type Props = {
   organization: Organization | null;
@@ -37,6 +38,7 @@ const PublicHolidaysPage = ({ organization }: Props) => {
   const [sendMode, setSendMode] = useState<SendMode>("instant");
   const [scheduledAt, setScheduledAt] = useState("");
   const [notifying, setNotifying] = useState(false);
+  const [successModalMessage, setSuccessModalMessage] = useState("");
 
   useEffect(() => {
     if (organization) {
@@ -111,6 +113,7 @@ const PublicHolidaysPage = ({ organization }: Props) => {
           description: formData.description,
           affectsAllStaff: formData.affectsAllStaff
         });
+        setSuccessModalMessage("Holiday created successfully.");
       } else if (formMode === "edit" && editingHoliday) {
         await updatePublicHoliday(organization.id, editingHoliday.id, {
           name: formData.name.trim(),
@@ -120,6 +123,7 @@ const PublicHolidaysPage = ({ organization }: Props) => {
           description: formData.description,
           affectsAllStaff: formData.affectsAllStaff
         });
+        setSuccessModalMessage("Holiday updated successfully.");
       }
       await loadHolidays();
       resetForm();
@@ -141,6 +145,7 @@ const PublicHolidaysPage = ({ organization }: Props) => {
       await deletePublicHoliday(organization.id, holidayId);
       await loadHolidays();
       setDeleteConfirm(null);
+      setSuccessModalMessage("Holiday deleted successfully.");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Delete failed";
       setError(message);
@@ -162,6 +167,11 @@ const PublicHolidaysPage = ({ organization }: Props) => {
       };
       await notifyStaffAboutHoliday(organization.id, holidayId, payload);
       setError("");
+      setSuccessModalMessage(
+        sendMode === "scheduled"
+          ? "Holiday notification scheduled successfully."
+          : "Holiday notification sent successfully."
+      );
       // Show success message
       setTimeout(() => {
         setNotifyModal(null);
@@ -497,6 +507,13 @@ const PublicHolidaysPage = ({ organization }: Props) => {
           </div>
         </div>
       )}
+
+      <SuccessModal
+        isOpen={Boolean(successModalMessage)}
+        title="Action Successful"
+        message={successModalMessage}
+        onClose={() => setSuccessModalMessage("")}
+      />
     </main>
   );
 };

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { OrgSettings } from "../types";
 import { registerAdmin, setOrganizationStaffPassword } from "../lib/api";
+import SuccessModal from "./SuccessModal";
 
 type Props = {
   settings: OrgSettings;
@@ -29,6 +30,7 @@ const AdminSettings = ({
   const [staffLoginSaving, setStaffLoginSaving] = useState(false);
   const [locatingOffice, setLocatingOffice] = useState(false);
   const [officeLocationError, setOfficeLocationError] = useState("");
+  const [successModalMessage, setSuccessModalMessage] = useState("");
 
   const workingDays = settings.workingDays ?? [1, 2, 3, 4, 5];
   const adminLimit =
@@ -57,6 +59,7 @@ const AdminSettings = ({
       return;
     }
     onUpdate({ ...settings, roles: [...settings.roles, trimmed] });
+    setSuccessModalMessage("Role added successfully.");
     setRoleInput("");
   };
 
@@ -65,6 +68,7 @@ const AdminSettings = ({
       ...settings,
       roles: settings.roles.filter((role) => role !== roleToRemove)
     });
+    setSuccessModalMessage("Role removed successfully.");
   };
 
   const handleEditRole = (roleToEdit: string) => {
@@ -83,6 +87,7 @@ const AdminSettings = ({
       role === roleToSave ? nextName : role
     );
     onUpdate({ ...settings, roles: nextRoles });
+    setSuccessModalMessage("Role updated successfully.");
     setEditingRole(null);
   };
 
@@ -104,6 +109,7 @@ const AdminSettings = ({
     registerAdmin({ orgId, email: trimmed, password: adminPasswordInput })
       .then(() => {
         onUpdate({ ...settings, adminEmails: [...adminEmails, trimmed] });
+        setSuccessModalMessage("Admin added successfully.");
       })
       .finally(() => {
         setAdminInput("");
@@ -116,6 +122,7 @@ const AdminSettings = ({
       ...settings,
       adminEmails: adminEmails.filter((email) => email !== emailToRemove)
     });
+    setSuccessModalMessage("Admin removed successfully.");
   };
 
   const handleSaveStaffLoginPassword = () => {
@@ -123,7 +130,9 @@ const AdminSettings = ({
     if (!trimmed || staffLoginSaving) return;
     setStaffLoginSaving(true);
     setOrganizationStaffPassword({ orgId, password: trimmed })
-      .then(() => undefined)
+      .then(() => {
+        setSuccessModalMessage("Staff login password saved.");
+      })
       .finally(() => {
         setStaffLoginSaving(false);
       });
@@ -146,6 +155,7 @@ const AdminSettings = ({
           officeLatitude: Number(position.coords.latitude.toFixed(6)),
           officeLongitude: Number(position.coords.longitude.toFixed(6))
         });
+        setSuccessModalMessage("Office location updated successfully.");
         setLocatingOffice(false);
       },
       (error) => {
@@ -167,8 +177,9 @@ const AdminSettings = ({
   };
 
   return (
-    <section className="admin-settings">
-      <details className="role-settings settings-block" open>
+    <>
+      <section className="admin-settings">
+        <details className="role-settings settings-block" open>
         <summary className="settings-summary">
           <h3>Plan tier</h3>
           <p className="muted">Controls admin limits and advanced capabilities.</p>
@@ -578,8 +589,16 @@ const AdminSettings = ({
             <p className="muted">No roles yet. Add the first role above.</p>
           ) : null}
         </div>
-      </details>
-    </section>
+        </details>
+      </section>
+
+      <SuccessModal
+        isOpen={Boolean(successModalMessage)}
+        title="Success"
+        message={successModalMessage}
+        onClose={() => setSuccessModalMessage("")}
+      />
+    </>
   );
 };
 
