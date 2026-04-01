@@ -61,22 +61,28 @@ const EditStaffModal = ({ isOpen, staff, roles, onClose, onSave, isLoading = fal
   const canSave = fullName.trim() && email.trim() && role && hasChanges;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <div
+        className="modal modal-wide"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Edit staff member"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
-          <h2>Edit Staff Member</h2>
-          <button className="close-btn" onClick={onClose} aria-label="Close">
-            ✕
+          <h3>Edit Staff Member</h3>
+          <button className="btn ghost" type="button" onClick={onClose} aria-label="Close">
+            ×
           </button>
         </div>
 
-        <div className="modal-body">
+        <div>
           {error && <div className="error-message">{error}</div>}
 
-          <div className="form-group">
-            <label htmlFor="fullName">
+          <label className="modal-label" htmlFor="fullName">
+            <span className="label-text">
               Full Name <span className="required">*</span>
-            </label>
+            </span>
             <input
               id="fullName"
               type="text"
@@ -85,12 +91,12 @@ const EditStaffModal = ({ isOpen, staff, roles, onClose, onSave, isLoading = fal
               placeholder="Enter full name"
               disabled={isLoading}
             />
-          </div>
+          </label>
 
-          <div className="form-group">
-            <label htmlFor="email">
+          <label className="modal-label" htmlFor="email">
+            <span className="label-text">
               Email <span className="required">*</span>
-            </label>
+            </span>
             <input
               id="email"
               type="email"
@@ -99,12 +105,12 @@ const EditStaffModal = ({ isOpen, staff, roles, onClose, onSave, isLoading = fal
               placeholder="Enter email address"
               disabled={isLoading}
             />
-          </div>
+          </label>
 
-          <div className="form-group">
-            <label htmlFor="role">
+          <label className="modal-label" htmlFor="role">
+            <span className="label-text">
               Role <span className="required">*</span>
-            </label>
+            </span>
             <select
               id="role"
               value={role}
@@ -118,15 +124,16 @@ const EditStaffModal = ({ isOpen, staff, roles, onClose, onSave, isLoading = fal
                 </option>
               ))}
             </select>
-          </div>
+          </label>
         </div>
 
-        <div className="modal-footer">
-          <button className="btn ghost" onClick={onClose} disabled={isLoading}>
+        <div className="modal-actions">
+          <button className="btn ghost" type="button" onClick={onClose} disabled={isLoading}>
             Cancel
           </button>
           <button
             className="btn solid"
+            type="button"
             onClick={handleSave}
             disabled={isLoading || !canSave}
           >
