@@ -54,54 +54,59 @@ const EditResponseModal = ({ isOpen, response, fields, onClose, onSave, isLoadin
   const staffName = fullNameField ? response.values[fullNameField.id] : "Unknown";
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <div
+        className="modal modal-wide"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Edit details - ${staffName}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
-          <h2>Edit Details - {staffName}</h2>
-          <button className="close-btn" onClick={onClose} aria-label="Close">
-            ✕
+          <h3>Edit Details - {staffName}</h3>
+          <button className="btn ghost" type="button" onClick={onClose} aria-label="Close">
+            ×
           </button>
         </div>
 
-        <div className="modal-body">
+        <div>
           {error && <div className="error-message">{error}</div>}
           
-          <div className="form-group">
-            {fields.map((field) => (
-              <div key={field.id} className="form-field">
-                <label htmlFor={field.id}>
-                  {field.label}
-                  {field.required ? <span className="required">*</span> : null}
-                </label>
-                {field.type === "address" ? (
-                  <textarea
-                    id={field.id}
-                    value={values[field.id] || ""}
-                    onChange={(e) => handleChange(field.id, e.target.value)}
-                    placeholder={`Enter ${field.label.toLowerCase()}`}
-                    disabled={isLoading}
-                  />
-                ) : (
-                  <input
-                    id={field.id}
-                    type={field.type === "email" ? "email" : "text"}
-                    value={values[field.id] || ""}
-                    onChange={(e) => handleChange(field.id, e.target.value)}
-                    placeholder={`Enter ${field.label.toLowerCase()}`}
-                    disabled={isLoading}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+          {fields.map((field) => (
+            <label key={field.id} className="modal-label" htmlFor={field.id}>
+              <span className="label-text">
+                {field.label}
+                {field.required ? <span className="required">*</span> : null}
+              </span>
+              {field.type === "address" ? (
+                <textarea
+                  id={field.id}
+                  value={values[field.id] || ""}
+                  onChange={(e) => handleChange(field.id, e.target.value)}
+                  placeholder={`Enter ${field.label.toLowerCase()}`}
+                  disabled={isLoading}
+                />
+              ) : (
+                <input
+                  id={field.id}
+                  type={field.type === "email" ? "email" : "text"}
+                  value={values[field.id] || ""}
+                  onChange={(e) => handleChange(field.id, e.target.value)}
+                  placeholder={`Enter ${field.label.toLowerCase()}`}
+                  disabled={isLoading}
+                />
+              )}
+            </label>
+          ))}
         </div>
 
-        <div className="modal-footer">
-          <button className="btn ghost" onClick={onClose} disabled={isLoading}>
+        <div className="modal-actions">
+          <button className="btn ghost" type="button" onClick={onClose} disabled={isLoading}>
             Cancel
           </button>
           <button 
             className="btn solid" 
+            type="button"
             onClick={handleSave} 
             disabled={isLoading}
           >
