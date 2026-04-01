@@ -259,6 +259,12 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   }, [selectedId]);
 
   useEffect(() => {
+    if (!activeItem?.allowPreRegister && responseFilter !== "all") {
+      setResponseFilter("all");
+    }
+  }, [activeItem?.allowPreRegister, responseFilter]);
+
+  useEffect(() => {
     if (!activeItem) {
       setResponseValues({});
       setEditCollect({
@@ -738,18 +744,22 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                   <span className="label">Total responses</span>
                   <strong>{responseSummary.total}</strong>
                 </div>
-                <div className="disposable-summary-card preregistered">
-                  <span className="label">Pre-registered</span>
-                  <strong>{responseSummary.preRegistered}</strong>
-                </div>
-                <div className="disposable-summary-card checked-in">
-                  <span className="label">Checked in</span>
-                  <strong>{responseSummary.checkedIn}</strong>
-                </div>
-                <div className="disposable-summary-card rate">
-                  <span className="label">Check-in rate</span>
-                  <strong>{responseSummary.attendanceRate}%</strong>
-                </div>
+                {activeItem.allowPreRegister ? (
+                  <>
+                    <div className="disposable-summary-card preregistered">
+                      <span className="label">Pre-registered</span>
+                      <strong>{responseSummary.preRegistered}</strong>
+                    </div>
+                    <div className="disposable-summary-card checked-in">
+                      <span className="label">Checked in</span>
+                      <strong>{responseSummary.checkedIn}</strong>
+                    </div>
+                    <div className="disposable-summary-card rate">
+                      <span className="label">Check-in rate</span>
+                      <strong>{responseSummary.attendanceRate}%</strong>
+                    </div>
+                  </>
+                ) : null}
               </div>
             </div>
 
@@ -922,29 +932,31 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                 <p className="muted">No responses yet.</p>
               ) : (
                 <>
-                  <div className="disposable-filters">
-                    <button
-                      type="button"
-                      className={`filter-pill ${responseFilter === "all" ? "active" : ""}`}
-                      onClick={() => setResponseFilter("all")}
-                    >
-                      All ({responses.length})
-                    </button>
-                    <button
-                      type="button"
-                      className={`filter-pill ${responseFilter === "preregistered" ? "active" : ""}`}
-                      onClick={() => setResponseFilter("preregistered")}
-                    >
-                      Pre-registered ({responseSummary.preRegistered})
-                    </button>
-                    <button
-                      type="button"
-                      className={`filter-pill ${responseFilter === "checked-in" ? "active" : ""}`}
-                      onClick={() => setResponseFilter("checked-in")}
-                    >
-                      Checked in ({responseSummary.checkedIn})
-                    </button>
-                  </div>
+                  {activeItem.allowPreRegister ? (
+                    <div className="disposable-filters">
+                      <button
+                        type="button"
+                        className={`filter-pill ${responseFilter === "all" ? "active" : ""}`}
+                        onClick={() => setResponseFilter("all")}
+                      >
+                        All ({responses.length})
+                      </button>
+                      <button
+                        type="button"
+                        className={`filter-pill ${responseFilter === "preregistered" ? "active" : ""}`}
+                        onClick={() => setResponseFilter("preregistered")}
+                      >
+                        Pre-registered ({responseSummary.preRegistered})
+                      </button>
+                      <button
+                        type="button"
+                        className={`filter-pill ${responseFilter === "checked-in" ? "active" : ""}`}
+                        onClick={() => setResponseFilter("checked-in")}
+                      >
+                        Checked in ({responseSummary.checkedIn})
+                      </button>
+                    </div>
+                  ) : null}
 
                   {filteredResponses.length === 0 ? (
                     <p className="muted">No responses for this filter.</p>
