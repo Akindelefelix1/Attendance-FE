@@ -28,6 +28,7 @@ const PublicDisposableCheckInPage = () => {
   const [responseCount, setResponseCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [eventDayFlow, setEventDayFlow] = useState<"checkin" | "register">("checkin");
 
   const titleLabel = useMemo(() => {
     if (!attendance) return "Event check-in";
@@ -38,6 +39,8 @@ const PublicDisposableCheckInPage = () => {
   const isEventDay = attendance?.eventDateISO === todayISO;
   const isBeforeEvent = attendance ? todayISO < attendance.eventDateISO : false;
   const preRegisterEnabled = Boolean(attendance?.allowPreRegister);
+  const shouldUseEmailOnlyCheckIn =
+    preRegisterEnabled && isEventDay && eventDayFlow === "checkin";
 
   const showToast = (kind: ToastState["kind"], message: string) => {
     setToast({ kind, message });
@@ -73,6 +76,7 @@ const PublicDisposableCheckInPage = () => {
           initial[field.id] = "";
         });
         setValues(initial);
+        setEventDayFlow("checkin");
         setAttendance(item);
         setResponseCount(0);
         setStatus("ready");
@@ -94,11 +98,12 @@ const PublicDisposableCheckInPage = () => {
     if (!attendance) return false;
 
     const emailValue = (values.email ?? "").trim();
-    const emailOnlyCheckIn =
-      preRegisterEnabled &&
-      isEventDay &&
-      action === "checkin" &&
-      emailValue.length > 0;
+    const emailOnlyCheckIn = shouldUseEmailOnlyCheckIn && action === "checkin";
+
+    if (emailOnlyCheckIn && !emailValue) {
+      setError("Please provide Email.");
+      return false;
+    }
 
     for (const field of attendance.fields) {
       const nextValue = values[field.id]?.trim() ?? "";
@@ -129,11 +134,23 @@ const PublicDisposableCheckInPage = () => {
         )
       });
 
+      const submittedEmail = (values.email ?? "").trim();
+
       const cleared: Record<string, string> = {};
       attendance.fields.forEach((field) => {
         cleared[field.id] = "";
       });
       setValues(cleared);
+
+      // After event-day walk-in registration, switch to email-only check-in flow.
+      if (preRegisterEnabled && isEventDay && action === "preregister") {
+        setEventDayFlow("checkin");
+        setValues((prev) => ({
+          ...prev,
+          email: submittedEmail
+        }));
+      }
+
       setResponseCount((prev) => prev + 1);
       showToast("success", result.message || "Check-in submitted successfully.");
     } catch (submitError) {
@@ -253,7 +270,9 @@ const PublicDisposableCheckInPage = () => {
               {isBeforeEvent
                 ? "Pre-registration is open now. Return on event day to complete check-in."
                 : isEventDay
-                  ? "Event day check-in is live. If you already pre-registered, enter only your email to check in."
+                  ? eventDayFlow === "checkin"
+                    ? "Event day check-in is live. If you already pre-registered, enter only your email to check in."
+                    : "Walk-in attendee? Fill this form to register now."
                   : "Event date has passed."}
             </p>
           ) : null}
@@ -261,22 +280,60 @@ const PublicDisposableCheckInPage = () => {
         </div>
 
         <div className="public-checkin-form">
-          {attendance?.fields.map((field) => (
-            <label key={field.id}>
-              {field.label}
+          {preRegisterEnabled && isEventDay ? (
+            <div className="disposable-filters">
+              <button
+                type="button"
+                className={`filter-pill ${eventDayFlow === "checkin" ? "active" : ""}`}
+                onClick={() => setEventDayFlow("checkin")}
+                disabled={isSubmitting}
+              >
+                I pre-registered
+              </button>
+              <button
+                type="button"
+                className={`filter-pill ${eventDayFlow === "register" ? "active" : ""}`}
+                onClick={() => setEventDayFlow("register")}
+                disabled={isSubmitting}
+              >
+                I need to register
+              </button>
+            </div>
+          ) : null}
+
+          {shouldUseEmailOnlyCheckIn ? (
+            <label>
+              Email
               <input
-                type={field.type === "email" ? "email" : "text"}
-                value={values[field.id] ?? ""}
+                type="email"
+                value={values.email ?? ""}
                 onChange={(event) =>
                   setValues((prev) => ({
                     ...prev,
-                    [field.id]: event.target.value
+                    email: event.target.value
                   }))
                 }
-                placeholder={`Enter ${field.label.toLowerCase()}`}
+                placeholder="Enter your email"
               />
             </label>
-          ))}
+          ) : (
+            attendance?.fields.map((field) => (
+              <label key={field.id}>
+                {field.label}
+                <input
+                  type={field.type === "email" ? "email" : "text"}
+                  value={values[field.id] ?? ""}
+                  onChange={(event) =>
+                    setValues((prev) => ({
+                      ...prev,
+                      [field.id]: event.target.value
+                    }))
+                  }
+                  placeholder={`Enter ${field.label.toLowerCase()}`}
+                />
+              </label>
+            ))
+          )}
 
           {error ? <p className="auth-error">{error}</p> : null}
 
@@ -286,15 +343,19 @@ const PublicDisposableCheckInPage = () => {
                 className="btn ghost"
                 type="button"
                 onClick={() => handleSubmit("preregister")}
-                disabled={isSubmitting || !isBeforeEvent}
+                disabled={isSubmitting || (!isBeforeEvent && !(isEventDay && eventDayFlow === "register"))}
               >
-                {isSubmitting && isBeforeEvent ? "Submitting..." : "Pre-register"}
+                {isSubmitting && (isBeforeEvent || (isEventDay && eventDayFlow === "register"))
+                  ? "Submitting..."
+                  : isEventDay
+                    ? "Register now"
+                    : "Pre-register"}
               </button>
               <button
                 className="btn solid"
                 type="button"
                 onClick={() => handleSubmit("checkin")}
-                disabled={isSubmitting || !isEventDay}
+                disabled={isSubmitting || !isEventDay || eventDayFlow !== "checkin"}
               >
                 {isSubmitting && isEventDay ? "Submitting..." : "Check in"}
               </button>
