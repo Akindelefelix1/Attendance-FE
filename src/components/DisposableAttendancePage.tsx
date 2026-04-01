@@ -144,6 +144,10 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [pendingCheckInResponse, setPendingCheckInResponse] =
     useState<DisposableAttendanceResponse | null>(null);
   const [isCheckingInResponse, setIsCheckingInResponse] = useState(false);
+  const [isRefreshingResponses, setIsRefreshingResponses] = useState(false);
+  const [isPageFocused, setIsPageFocused] = useState(
+    typeof document !== "undefined" ? document.hasFocus() && document.visibilityState === "visible" : true
+  );
 
   const activeItem = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
@@ -305,6 +309,33 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     setEditFieldsError("");
     setPendingCheckInResponse(null);
   }, [activeItem?.id]);
+
+  useEffect(() => {
+    const syncFocusState = () => {
+      setIsPageFocused(document.hasFocus() && document.visibilityState === "visible");
+    };
+
+    window.addEventListener("focus", syncFocusState);
+    window.addEventListener("blur", syncFocusState);
+    document.addEventListener("visibilitychange", syncFocusState);
+    syncFocusState();
+
+    return () => {
+      window.removeEventListener("focus", syncFocusState);
+      window.removeEventListener("blur", syncFocusState);
+      document.removeEventListener("visibilitychange", syncFocusState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!activeItem || !isPageFocused) return;
+
+    const intervalId = window.setInterval(() => {
+      void reloadResponses(activeItem.id);
+    }, 10000);
+
+    return () => window.clearInterval(intervalId);
+  }, [activeItem?.id, isPageFocused, organization?.id]);
 
   const canCreate = items.length < limit;
 
@@ -629,6 +660,16 @@ const DisposableAttendancePage = ({ organization }: Props) => {
     }
   };
 
+  const handleRefreshResponses = async () => {
+    if (!activeItem) return;
+    try {
+      setIsRefreshingResponses(true);
+      await reloadResponses(activeItem.id);
+    } finally {
+      setIsRefreshingResponses(false);
+    }
+  };
+
   if (!organization) {
     return (
       <section className="panel disposable-page">
@@ -933,7 +974,17 @@ const DisposableAttendancePage = ({ organization }: Props) => {
             ) : null}
 
             <div className="disposable-responses">
-              <h4>Responses</h4>
+              <div className="section-header-row">
+                <h4>Responses</h4>
+                <button
+                  className="btn ghost"
+                  type="button"
+                  onClick={handleRefreshResponses}
+                  disabled={isRefreshingResponses || isManaging}
+                >
+                  {isRefreshingResponses ? "Refreshing..." : "Refresh responses"}
+                </button>
+              </div>
               {responses.length === 0 ? (
                 <p className="muted">No responses yet.</p>
               ) : (
