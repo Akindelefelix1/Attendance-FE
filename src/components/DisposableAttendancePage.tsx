@@ -123,6 +123,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [postSubmitActionLink, setPostSubmitActionLink] = useState("");
+  const [postSubmitActionLabel, setPostSubmitActionLabel] = useState("");
   const [eventDateISO, setEventDateISO] = useState(getTodayISO());
   const [collect, setCollect] = useState<FieldToggleState>({
     email: true,
@@ -465,6 +466,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
         description: description.trim(),
         location: location.trim(),
         postSubmitActionLink: normalizedActionLink || undefined,
+        postSubmitActionLabel: postSubmitActionLabel.trim() || undefined,
         eventDateISO,
         fields,
         isRecurring,
@@ -479,6 +481,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       setDescription("");
       setLocation("");
       setPostSubmitActionLink("");
+      setPostSubmitActionLabel("");
       setEventDateISO(getTodayISO());
       setCollect({ email: true, phone: false, occupation: false, address: false });
       setCustomFields([]);
@@ -1261,6 +1264,16 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                   value={postSubmitActionLink}
                   onChange={(event) => setPostSubmitActionLink(event.target.value)}
                   placeholder="https://chat.whatsapp.com/..."
+                  disabled={!canCreate || isCreating}
+                />
+              </label>
+              <label>
+                Success action button label (optional)
+                <input
+                  type="text"
+                  value={postSubmitActionLabel}
+                  onChange={(event) => setPostSubmitActionLabel(event.target.value)}
+                  placeholder="Join WhatsApp group"
                   disabled={!canCreate || isCreating}
                 />
               </label>

@@ -148,6 +148,7 @@ export type DisposableAttendance = {
   recurrenceCustomRule: string;
   allowPreRegister?: boolean;
   postSubmitActionLink?: string | null;
+  postSubmitActionLabel?: string | null;
   isArchived: boolean;
   createdAtISO: string;
   updatedAtISO?: string;
@@ -164,6 +165,7 @@ export type DisposableAttendanceResponse = {
   action?: "pre-registered" | "already-preregistered" | "checked-in";
   message?: string;
   postSubmitActionLink?: string | null;
+  postSubmitActionLabel?: string | null;
   submittedAtISO: string;
   values: Record<string, string>;
 };
@@ -204,6 +206,7 @@ export type PublicDisposableAttendanceForm = {
   recurrenceCustomRule: string;
   allowPreRegister?: boolean;
   postSubmitActionLink?: string | null;
+  postSubmitActionLabel?: string | null;
 };
 
 export type PublicHoliday = {

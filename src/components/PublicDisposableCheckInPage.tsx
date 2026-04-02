@@ -32,6 +32,7 @@ const PublicDisposableCheckInPage = () => {
   const [eventDayFlow, setEventDayFlow] = useState<"checkin" | "register">("checkin");
   const [successModalMessage, setSuccessModalMessage] = useState<string>("");
   const [successModalActionLink, setSuccessModalActionLink] = useState<string>("");
+  const [successModalActionLabel, setSuccessModalActionLabel] = useState<string>("");
 
   const titleLabel = useMemo(() => {
     if (!attendance) return "Event check-in";
@@ -157,6 +158,9 @@ const PublicDisposableCheckInPage = () => {
       setResponseCount((prev) => prev + 1);
       setSuccessModalMessage(result.message || "Check-in submitted successfully.");
       setSuccessModalActionLink(result.postSubmitActionLink || attendance.postSubmitActionLink || "");
+      setSuccessModalActionLabel(
+        result.postSubmitActionLabel || attendance.postSubmitActionLabel || "Take next action"
+      );
     } catch (submitError) {
       const message = getErrorMessage(submitError, "Could not submit check-in.");
       setError(message);
@@ -377,10 +381,11 @@ const PublicDisposableCheckInPage = () => {
         title="Success"
         message={successModalMessage}
         actionLink={successModalActionLink || undefined}
-        actionLabel="Take next action"
+        actionLabel={successModalActionLabel || "Take next action"}
         onClose={() => {
           setSuccessModalMessage("");
           setSuccessModalActionLink("");
+          setSuccessModalActionLabel("");
         }}
       />
     </main>
