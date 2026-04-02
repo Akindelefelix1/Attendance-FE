@@ -83,6 +83,21 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
+const normalizeHttpUrl = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+};
+
 type ToastState = {
   kind: "success" | "error";
   message: string;
@@ -107,6 +122,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+  const [postSubmitActionLink, setPostSubmitActionLink] = useState("");
   const [eventDateISO, setEventDateISO] = useState(getTodayISO());
   const [collect, setCollect] = useState<FieldToggleState>({
     email: true,
@@ -434,6 +450,12 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       isRecurring && recurrenceMode !== "custom" && recurrenceEndDateISO
         ? recurrenceEndDateISO
         : null;
+    const normalizedActionLink = normalizeHttpUrl(postSubmitActionLink);
+
+    if (normalizedActionLink === null) {
+      setCreateError("Provide a valid link starting with http:// or https://");
+      return;
+    }
 
     try {
       setIsCreating(true);
@@ -442,6 +464,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
         title: title.trim(),
         description: description.trim(),
         location: location.trim(),
+        postSubmitActionLink: normalizedActionLink || undefined,
         eventDateISO,
         fields,
         isRecurring,
@@ -455,6 +478,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
       setTitle("");
       setDescription("");
       setLocation("");
+      setPostSubmitActionLink("");
       setEventDateISO(getTodayISO());
       setCollect({ email: true, phone: false, occupation: false, address: false });
       setCustomFields([]);
@@ -810,6 +834,7 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                 <span className="pill">{activeItem.location || "No location"}</span>
                 <span className="pill">{recurrenceLabel(activeItem)}</span>
                 {activeItem.allowPreRegister ? <span className="pill">Pre-register enabled</span> : null}
+                {activeItem.postSubmitActionLink ? <span className="pill">Post-submit action enabled</span> : null}
                 <span className="pill">{responses.length} responses</span>
               </div>
             </div>
@@ -1226,6 +1251,16 @@ const DisposableAttendancePage = ({ organization }: Props) => {
                   value={location}
                   onChange={(event) => setLocation(event.target.value)}
                   placeholder="Venue or room"
+                  disabled={!canCreate || isCreating}
+                />
+              </label>
+              <label>
+                Success action link (optional)
+                <input
+                  type="url"
+                  value={postSubmitActionLink}
+                  onChange={(event) => setPostSubmitActionLink(event.target.value)}
+                  placeholder="https://chat.whatsapp.com/..."
                   disabled={!canCreate || isCreating}
                 />
               </label>

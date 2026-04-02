@@ -378,6 +378,7 @@ export const createDisposableAttendance = async (payload: {
   title: string;
   description?: string;
   location?: string;
+  postSubmitActionLink?: string;
   eventDateISO: string;
   fields: DisposableField[];
   isRecurring: boolean;

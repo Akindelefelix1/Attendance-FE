@@ -4,6 +4,8 @@ type Props = {
   message: string;
   onClose: () => void;
   closeLabel?: string;
+  actionLink?: string;
+  actionLabel?: string;
 };
 
 const SUCCESS_ICON_URL =
@@ -14,7 +16,9 @@ const SuccessModal = ({
   title = "Success",
   message,
   onClose,
-  closeLabel = "Done"
+  closeLabel = "Done",
+  actionLink,
+  actionLabel = "Continue"
 }: Props) => {
   if (!isOpen) return null;
 
@@ -31,6 +35,16 @@ const SuccessModal = ({
         <h3>{title}</h3>
         <p className="muted">{message}</p>
         <div className="modal-actions">
+          {actionLink ? (
+            <a
+              className="btn ghost"
+              href={actionLink}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {actionLabel}
+            </a>
+          ) : null}
           <button className="btn solid" type="button" onClick={onClose}>
             {closeLabel}
           </button>
